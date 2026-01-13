@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Volleyball Livescore</title>
+
+  <!-- React 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel (JSX i browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --border: #e6e6e6;
+      --text: #111827;
+      --muted: #6b7280;
+      --shadow: 0 1px 2px rgba(0,0,0,0.05);
+      --radius: 16px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 6px 0 14px;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: #fafafa;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #111;
+      user-select: none;
+    }
+
+    .filterBtn {
+      cursor: pointer;
+      outline: none;
+      border: 1px solid var(--border);
+    }
+    .filterBtn:active { transform: translateY(1px); }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      display: inline-block;
+    }
+    .dot.gray { background: #9ca3af; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .cardHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .compTitle {
+      font-weight: 850;
+      font-size: 15px;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: #fafafa;
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+      color: #111;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .scoreRow {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .team {
+      font-weight: 650;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .team.right {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .teamName {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      display: inline-block;
+    }
+
+    .bigScore {
+      text-align: center;
+      min-width: 110px;
+    }
+
+    .sets {
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.05;
+    }
+
+    .points {
+      margin-top: 2px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .setline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .setbox {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px;
+      background: #fcfcfc;
+      text-align: center;
+    }
+
+    .setbox .label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .setbox .val {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .meta {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .alert {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #f2b8b8;
+      background: #fff5f5;
+      border-radius: 12px;
+      color: #7f1d1d;
+    }
+
+    /* Logo-boks: alltid synlig; grå om mangler */
+    .logoBox {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: #e5e7eb;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+
+    .logoBox img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    @media (max-width: 480px) {
+      .logoBox { width: 18px; height: 18px; border-radius: 5px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useCallback, useEffect, useMemo, useRef, useState, memo } = React;
+
+    const API_BASE = "https://exclusively-row-massage-fuzzy.trycloudflare.com";
+    const POLL_MS = 5000;
+
+    function safeArray(x) { return Array.isArray(x) ? x : []; }
+
+    function formatTs(tsSeconds) {
+      if (!tsSeconds) return "";
+      const d = new Date(tsSeconds * 1000);
+      return d.toLocaleString("nb-NO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" });
+    }
+
+    function liveLabel(statusType) {
+      const t = String(statusType || "").toLowerCase();
+      if (t.includes("inprogress") || t.includes("live") || t.includes("inplay")) return "LIVE";
+      if (t.includes("finished") || t.includes("ended")) return "SLUTT";
+      if (t.includes("not") || t.includes("sched")) return "KOMMER";
+      return statusType || "—";
+    }
+
+    function isLiveStatus(statusType) {
+      const t = String(statusType || "").toLowerCase();
+      return t.includes("inprogress") || t.includes("live") || t.includes("inplay");
+    }
+
+    function statusDot(statusType) {
+      const t = String(statusType || "").toLowerCase();
+      if (t.includes("inprogress") || t.includes("live") || t.includes("inplay")) return "dot";
+      if (t.includes("finished") || t.includes("ended")) return "dot gray";
+      return "dot gray";
+    }
+
+    function normalizeGroupType(v) {
+      if (v == null) return null;
+      const s = String(v).trim().toLowerCase();
+      if (!s) return null;
+      if (s === "mizuno") return "mizuno";
+      if (s === "abroad") return "abroad";
+      return s;
+    }
+
+    function currentPoints(ev) {
+      let setNo = null;
+      const m = String(ev.status_desc || "").match(/(\d+)/);
+      if (m) setNo = Number(m[1]);
+
+      if (!setNo) {
+        for (let i = 5; i >= 1; i--) {
+          if (ev["home_p" + i] != null || ev["away_p" + i] != null) { setNo = i; break; }
+        }
+      }
+
+      return {
+        setNo: setNo,
+        home: setNo ? ev["home_p" + setNo] : null,
+        away: setNo ? ev["away_p" + setNo] : null,
+      };
+    }
+
+    const FILTERS = [
+      { key: "all", label: "Alle", empty: "Det er ingen pågående kamper for øyeblikket." },
+      { key: "mizuno", label: "Mizuno Norge", empty: "Det er ingen pågående kamper i Norsk Mizunoliga." },
+      { key: "abroad", label: "Norske spillere i utlandet", empty: "Det er ingen norske spillere i aksjon for øyeblikket." },
+    ];
+
+    const SetBox = memo(function SetBox(props) {
+      const style = props.highlight ? { borderColor: "#c7d2fe", background: "#eef2ff" } : null;
+      return (
+        <div className="setbox" style={style}>
+          <div className="label">{props.label}</div>
+          <div className="val">{props.home ?? "—"} - {props.away ?? "—"}</div>
+        </div>
+      );
+    });
+
+    // -------------------- Logo caching --------------------
+    // status: "ok" | "fail"
+    const imgStatusCache = new Map();
+
+    function useImageStatus(src) {
+      const [status, setStatus] = useState(src ? (imgStatusCache.get(src) || "loading") : "none");
+
+      useEffect(() => {
+        if (!src) { setStatus("none"); return; }
+
+        const cached = imgStatusCache.get(src);
+        if (cached) { setStatus(cached); return; }
+
+        setStatus("loading");
+        const img = new Image();
+
+        img.onload = function () {
+          imgStatusCache.set(src, "ok");
+          setStatus("ok");
+        };
+
+        img.onerror = function () {
+          imgStatusCache.set(src, "fail");
+          setStatus("fail");
+        };
+
+        img.src = src;
+      }, [src]);
+
+      return status;
+    }
+
+    function LogoBox(props) {
+      const src = props.src;
+      const status = useImageStatus(src);
+
+      // Alltid en boks. Hvis fail/mangler -> grå boks uten innhold.
+      if (!src || status === "fail" || status === "none") {
+        return <span className="logoBox" aria-hidden="true"></span>;
+      }
+
+      // loading -> grå boks (samme)
+      if (status !== "ok") {
+        return <span className="logoBox" aria-hidden="true"></span>;
+      }
+
+      return (
+        <span className="logoBox" aria-hidden="true">
+          <img src={src} alt="" loading="lazy" />
+        </span>
+      );
+    }
+
+    function getHomeId(ev) { return ev.home_team_id ?? ev.home_teams_id ?? null; }
+    function getAwayId(ev) { return ev.away_team_id ?? ev.away_teams_id ?? null; }
+
+    function getTournamentId(ev) {
+      // støtter noen vanlige varianter
+      if (ev.tournament_id != null) return ev.tournament_id;
+      if (ev.tournamentId != null) return ev.tournamentId;
+      if (ev.tournament && ev.tournament.id != null) return ev.tournament.id;
+      // fallback: noen API sender "tournament" som id direkte
+      if (typeof ev.tournament === "number" || typeof ev.tournament === "string") return ev.tournament;
+      return null;
+    }
+
+    function teamLogoUrl(teamId) {
+      if (teamId == null) return null;
+      return API_BASE + "/img/teams/" + String(teamId) + ".png";
+    }
+
+    function tournamentLogoUrl(tournamentId) {
+      if (tournamentId == null) return null;
+      return API_BASE + "/img/tournaments/" + String(tournamentId) + ".png";
+    }
+
+    function compHeaderText(ev) {
+      const t = ev.tournament_name ? String(ev.tournament_name) : "";
+      const s = ev.season_name ? String(ev.season_name) : "";
+      if (t && s) return t + " · " + s;
+      return t || s || "—";
+    }
+
+    function App() {
+      const [events, setEvents] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState("");
+      const [filter, setFilter] = useState("all");
+
+      const pollRef = useRef(null);
+      const abortLiveRef = useRef(null);
+
+      const fetchJson = useCallback(async (path, signal) => {
+        const res = await fetch(API_BASE + path, {
+          headers: { "Accept": "application/json" },
+          signal: signal,
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(String(res.status) + " " + String(res.statusText));
+        return res.json();
+      }, []);
+
+      const loadLive = useCallback(async () => {
+        if (abortLiveRef.current) abortLiveRef.current.abort();
+        const controller = new AbortController();
+        abortLiveRef.current = controller;
+
+        try {
+          setError("");
+          const data = await fetchJson("/live", controller.signal);
+          setEvents(safeArray(data));
+        } catch (e) {
+          if (String(e && e.name) === "AbortError") return;
+          setError(String((e && e.message) ? e.message : e));
+        } finally {
+          setLoading(false);
+        }
+      }, [fetchJson]);
+
+      useEffect(() => {
+        loadLive();
+        pollRef.current = setInterval(loadLive, POLL_MS);
+        return () => {
+          if (pollRef.current) clearInterval(pollRef.current);
+          if (abortLiveRef.current) abortLiveRef.current.abort();
+        };
+      }, [loadLive]);
+
+      const liveEvents = useMemo(() => {
+        return events.filter(function (ev) { return isLiveStatus(ev.status_type); });
+      }, [events]);
+
+      const counts = useMemo(() => {
+        let miz = 0, abr = 0;
+        for (let i = 0; i < liveEvents.length; i++) {
+          const gt = normalizeGroupType(liveEvents[i].group_type);
+          if (gt === "mizuno") miz++;
+          else if (gt === "abroad") abr++;
+        }
+        return { all: liveEvents.length, mizuno: miz, abroad: abr };
+      }, [liveEvents]);
+
+      const visible = useMemo(() => {
+        const arr = liveEvents.slice();
+        arr.sort(function (a, b) { return (a.start_ts ?? 0) - (b.start_ts ?? 0); });
+        if (filter === "all") return arr;
+        return arr.filter(function (ev) { return normalizeGroupType(ev.group_type) === filter; });
+      }, [liveEvents, filter]);
+
+      return (
+        <div className="wrap">
+          <h1>🏐 Livescore</h1>
+
+          <div className="topbar">
+            <div className="badges">
+              <span className="badge">
+                <span className="dot" style={{ background: "#22c55e" }}></span>
+                Oppdaterer hvert {Math.round(POLL_MS / 1000)}s
+              </span>
+              <span className="badge">
+                {visible.length} vises (LIVE totalt {counts.all})
+              </span>
+            </div>
+            <div className="badges">
+              <span className="badge" style={{ color: "#6b7280" }}>Kilde: /live</span>
+              <span className="badge" style={{ color: "#6b7280" }}>Logo: /img/teams + /img/tournaments</span>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+            {FILTERS.map(function (f) {
+              const active = filter === f.key;
+              const n = (f.key === "all") ? counts.all : (f.key === "mizuno") ? counts.mizuno : counts.abroad;
+
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className="badge filterBtn"
+                  style={{
+                    background: active ? "#111827" : "#fafafa",
+                    color: active ? "#ffffff" : "#111827",
+                    borderColor: active ? "#111827" : "var(--border)",
+                  }}
+                  title={f.label}
+                >
+                  {f.label} ({n})
+                </button>
+              );
+            })}
+          </div>
+
+          {error && <div className="alert">Feil: {error}</div>}
+          {loading && <div style={{ marginTop: 10, color: "#6b7280" }}>Laster…</div>}
+
+          {!loading && !error && visible.length === 0 && (
+            <div className="card" style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 800, marginBottom: 6 }}>Ingen livekamper</div>
+              <div style={{ color: "#6b7280" }}>
+                {FILTERS.find(function (x) { return x.key === filter; })?.empty}
+              </div>
+            </div>
+          )}
+
+          <div className="grid">
+            {visible.map(function (ev) {
+              const label = liveLabel(ev.status_type);
+              const p = currentPoints(ev);
+
+              const setsHome = (ev.home_sets ?? 0);
+              const setsAway = (ev.away_sets ?? 0);
+
+              const currentSetText = p.setNo ? (String(p.setNo) + ". sett") : (ev.status_desc || "Pågår");
+
+              const key =
+                ev.event_id ??
+                ev.custom_id ??
+                String(ev.start_ts ?? "") + "-" + String(ev.home_team_name ?? "") + "-" + String(ev.away_team_name ?? "");
+
+              const homeId = getHomeId(ev);
+              const awayId = getAwayId(ev);
+              const tournamentId = getTournamentId(ev);
+
+              const homeLogo = teamLogoUrl(homeId);
+              const awayLogo = teamLogoUrl(awayId);
+              const tourLogo = tournamentLogoUrl(tournamentId);
+
+              return (
+                <div className="card" key={key}>
+                  <div className="cardHeader">
+                    <div>
+                      {/* Kun turnering + sesong øverst + turneringslogo */}
+                      <div className="compTitle">
+                        <LogoBox src={tourLogo} />
+                        <span>{compHeaderText(ev)}</span>
+                      </div>
+                      <div className="sub">{ev.group_type ? String(ev.group_type) : ""}</div>
+                    </div>
+
+                    <div className="status" title={ev.status_desc || ""}>
+                      <span className={statusDot(ev.status_type)}></span>
+                      {label + (ev.status_desc ? " · " + String(ev.status_desc) : "")}
+                    </div>
+                  </div>
+
+                  <div className="scoreRow">
+                    <div className="team">
+                      <LogoBox src={homeLogo} />
+                      <span className="teamName">{ev.home_team_name}</span>
+                    </div>
+
+                    <div className="bigScore">
+                      <div className="sets">{setsHome} - {setsAway}</div>
+                      <div className="points">
+                        {currentSetText + ": " + String(p.home ?? "—") + " - " + String(p.away ?? "—")}
+                      </div>
+                    </div>
+
+                    <div className="team right">
+                      <LogoBox src={awayLogo} />
+                      <span className="teamName">{ev.away_team_name}</span>
+                    </div>
+                  </div>
+
+                  <div className="setline">
+                    <SetBox label="1" home={ev.home_p1} away={ev.away_p1} highlight={p.setNo === 1} />
+                    <SetBox label="2" home={ev.home_p2} away={ev.away_p2} highlight={p.setNo === 2} />
+                    <SetBox label="3" home={ev.home_p3} away={ev.away_p3} highlight={p.setNo === 3} />
+                    <SetBox label="4" home={ev.home_p4} away={ev.away_p4} highlight={p.setNo === 4} />
+                    <SetBox label="5" home={ev.home_p5} away={ev.away_p5} highlight={p.setNo === 5} />
+                  </div>
+
+                  <div className="meta">
+                    <span>Start: {formatTs(ev.start_ts)}</span>
+                    <span>Event ID: {ev.event_id ?? "—"}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
