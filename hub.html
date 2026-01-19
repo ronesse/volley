@@ -185,12 +185,8 @@
     }
 
     /* --- index-lik match layout --- */
-    .matchCard{
-      cursor:pointer;
-    }
-    .matchCard:active{
-      transform: translateY(1px);
-    }
+    .matchCard{ cursor:pointer; }
+    .matchCard:active{ transform: translateY(1px); }
     .matchHeader{
       display:flex;
       justify-content:space-between;
@@ -272,20 +268,29 @@
 <script type="text/babel">
 const { useEffect, useMemo, useRef, useState } = React;
 
-const API_BASE_TEAMS = "https://volleyball.ronesse.no";
+/* ===========================
+   API base
+   =========================== */
+const API_BASE_TEAMS   = "https://volleyball.ronesse.no";
 const API_BASE_PLAYERS = "https://volleyball.ronesse.no";
-const API_BASE_EVENTS = "https://volleyball.ronesse.no";
+const API_BASE_EVENTS  = "https://volleyball.ronesse.no";
 
+/* ===========================
+   Settings
+   =========================== */
 const POLL_MS = 15000;
 const LOOKAHEAD_DAYS = 14;
 const LOOKBACK_DAYS = 30;
 
 const FILTERS = [
-  { key: "abroad", label: "Norske spillere i utlandet", empty: "Ingen treff i “Norske spillere i utlandet”." },
-  { key: "mizuno", label: "Mizuno Norge", empty: "Ingen treff i “Mizuno Norge”." },
-  { key: "all", label: "Alle", empty: "Ingen treff." },
+  { key: "abroad",  label: "Norske spillere i utlandet", empty: "Ingen treff i “Norske spillere i utlandet”." },
+  { key: "mizuno",  label: "Mizuno Norge", empty: "Ingen treff i “Mizuno Norge”." },
+  { key: "all",     label: "Alle", empty: "Ingen treff." },
 ];
 
+/* ===========================
+   Helpers
+   =========================== */
 function safeArray(x){ return Array.isArray(x) ? x : []; }
 function asStr(v){ return (v == null) ? "" : String(v).trim(); }
 function nonEmpty(v){ const s = asStr(v); return s ? s : null; }
@@ -315,7 +320,9 @@ function formatTs(tsSeconds){
   return d.toLocaleString("nb-NO", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
 }
 
-/* --- image cache --- */
+/* ===========================
+   Image cache (avoid reloading)
+   =========================== */
 const imgStatusCache = new Map(); // src -> "ok" | "fail"
 function useImageStatus(src){
   const [status, setStatus] = useState(src ? (imgStatusCache.get(src) || "loading") : "none");
@@ -344,9 +351,12 @@ function MiniLogo({ src }){
   return <span className="miniLogo" aria-hidden="true"><img src={src} alt="" loading="lazy" /></span>;
 }
 
-/* strict team logo rule */
-function teamLogoUrl(teamId){
-  const id = nonEmpty(teamId);
+/* ===========================
+   Image URL rules
+   NOTE: team logos uses sofascore team id (same as events homeId/awayId)
+   =========================== */
+function teamLogoUrl(sofaTeamId){
+  const id = nonEmpty(sofaTeamId);
   if (!id) return null;
   return API_BASE_EVENTS + "/img/teams/" + id + ".png";
 }
@@ -361,7 +371,9 @@ function playerPhotoUrl(playerId){
   return API_BASE_PLAYERS + "/img/players/" + id + ".jpg";
 }
 
-/* --- events helpers --- */
+/* ===========================
+   Events helpers
+   =========================== */
 function pickNumber(){
   for (let i=0;i<arguments.length;i++){
     const v = arguments[i];
@@ -426,9 +438,7 @@ function MatchCard({ e, statusLabel }){
 
   const href = e.eventId ? ("event.html?event_id=" + encodeURIComponent(String(e.eventId))) : null;
 
-  const onClick = () => {
-    if (href) window.location.href = href;
-  };
+  const onClick = () => { if (href) window.location.href = href; };
 
   return (
     <div className="card matchCard" role="link" tabIndex={0}
@@ -485,6 +495,9 @@ function MatchCard({ e, statusLabel }){
   );
 }
 
+/* ===========================
+   App
+   =========================== */
 function App(){
   const [tab, setTab] = useState("teams");
   const [matchesView, setMatchesView] = useState("live"); // live | next | finished
@@ -604,8 +617,20 @@ function App(){
       ]);
 
       setLiveTeam(safeArray(liveData).map(normalizeEvent).filter(e => e.homeId===teamSofa || e.awayId===teamSofa));
-      setNextTeam(safeArray(nextData).map(normalizeEvent).filter(e => (e.homeId===teamSofa || e.awayId===teamSofa) && !isFinished(e.raw)).sort((a,b)=>(a.startTs??0)-(b.startTs??0)).slice(0,5));
-      setPrevTeam(safeArray(prevData).map(normalizeEvent).filter(e => (e.homeId===teamSofa || e.awayId===teamSofa) && isFinished(e.raw)).sort((a,b)=>(b.startTs??0)-(a.startTs??0)).slice(0,5));
+      setNextTeam(
+        safeArray(nextData)
+          .map(normalizeEvent)
+          .filter(e => (e.homeId===teamSofa || e.awayId===teamSofa) && !isFinished(e.raw))
+          .sort((a,b)=>(a.startTs??0)-(b.startTs??0))
+          .slice(0,5)
+      );
+      setPrevTeam(
+        safeArray(prevData)
+          .map(normalizeEvent)
+          .filter(e => (e.homeId===teamSofa || e.awayId===teamSofa) && isFinished(e.raw))
+          .sort((a,b)=>(b.startTs??0)-(a.startTs??0))
+          .slice(0,5)
+      );
     } catch(e){
       setError(String(e?.message ?? e));
       setLiveTeam([]); setNextTeam([]); setPrevTeam([]);
@@ -642,6 +667,52 @@ function App(){
     if (!selectedTeam) return;
     loadTeamMatches(selectedTeam);
   }, [selectedTeam]);
+
+  /* ===========
+     Build "best" tournament/season per team (based on events)
+     Uses sofascore team id (event.homeId / event.awayId)
+     =========== */
+  const teamEventMeta = useMemo(() => {
+    const allEvents = [...live, ...upcoming, ...finished];
+    const agg = new Map(); // sofaId -> { tournaments: Map(name->count), seasons: Map(name->count) }
+
+    for (const e of allEvents) {
+      const ids = [e.homeId, e.awayId];
+      for (const id of ids) {
+        if (id == null) continue;
+
+        let entry = agg.get(id);
+        if (!entry) {
+          entry = { tournaments: new Map(), seasons: new Map() };
+          agg.set(id, entry);
+        }
+
+        const tName = asStr(e.tournamentName);
+        const sName = asStr(e.seasonName);
+
+        if (tName) entry.tournaments.set(tName, (entry.tournaments.get(tName) || 0) + 1);
+        if (sName) entry.seasons.set(sName, (entry.seasons.get(sName) || 0) + 1);
+      }
+    }
+
+    const pickTop = (m) => {
+      let bestName = null;
+      let bestCount = -1;
+      for (const [name, count] of m.entries()) {
+        if (count > bestCount) { bestCount = count; bestName = name; }
+      }
+      return bestName;
+    };
+
+    const out = new Map();
+    for (const [id, entry] of agg.entries()) {
+      out.set(id, {
+        tournamentName: pickTop(entry.tournaments),
+        seasonName: pickTop(entry.seasons),
+      });
+    }
+    return out;
+  }, [live, upcoming, finished]);
 
   const matchCounts = useMemo(() => {
     const src = (matchesView === "live") ? live : (matchesView === "next") ? upcoming : finished;
@@ -691,12 +762,22 @@ function App(){
   }, [players, selectedTeam]);
 
   function TeamCard({ t }){
-    const line2 = [t.league, t.country, t.widgetName ? ("Widget: " + t.widgetName) : null].filter(Boolean).join(" · ");
+    const meta = (t.sofascoreTeamId != null) ? teamEventMeta.get(t.sofascoreTeamId) : null;
+
+    const line2 = [
+      meta?.tournamentName,
+      meta?.seasonName,
+      t.league,
+      t.country,
+      t.widgetName ? ("Widget: " + t.widgetName) : null,
+    ].filter(Boolean).join(" · ");
+
     return (
       <div className="card" onClick={() => { setSelectedTeam(t); setTab("teams"); }} style={{ cursor:"pointer" }}>
         <div className="row">
           <div className="left">
-            <LogoBox src={teamLogoUrl(t.id)} label={initials(t.name)} />
+            {/* IMPORTANT: logo uses sofascoreTeamId */}
+            <LogoBox src={teamLogoUrl(t.sofascoreTeamId)} label={initials(t.name)} />
             <div className="nameBlock">
               <div className="name">{t.name}</div>
               <div className="sub">{line2 || "—"}</div>
@@ -750,6 +831,11 @@ function App(){
   }
 
   const statusLabel = matchesView === "live" ? "LIVE" : matchesView === "next" ? "NEXT" : "FINISHED";
+
+  const selectedMeta = useMemo(() => {
+    if (!selectedTeam || selectedTeam.sofascoreTeamId == null) return null;
+    return teamEventMeta.get(selectedTeam.sofascoreTeamId) || null;
+  }, [selectedTeam, teamEventMeta]);
 
   return (
     <div className="wrap">
@@ -822,15 +908,25 @@ function App(){
           <div className="card">
             <div className="row">
               <div className="left">
-                <LogoBox src={teamLogoUrl(selectedTeam.id)} label={initials(selectedTeam.name)} />
+                <LogoBox src={teamLogoUrl(selectedTeam.sofascoreTeamId)} label={initials(selectedTeam.name)} />
                 <div className="nameBlock">
                   <div className="name">{selectedTeam.name}</div>
-                  <div className="sub">{[selectedTeam.league, selectedTeam.country, selectedTeam.widgetName].filter(Boolean).join(" · ") || "—"}</div>
+                  <div className="sub">
+                    {[
+                      selectedMeta?.tournamentName,
+                      selectedMeta?.seasonName,
+                      selectedTeam.league,
+                      selectedTeam.country,
+                      selectedTeam.widgetName
+                    ].filter(Boolean).join(" · ") || "—"}
+                  </div>
                 </div>
               </div>
               <div className="meta">
                 {selectedTeam.groupType && <span className="pill">{selectedTeam.groupType}</span>}
                 {selectedTeam.sofascoreTeamId != null && <span className="pill">SofaTeam: {selectedTeam.sofascoreTeamId}</span>}
+                {selectedTeam.homepageUrl && <a className="btn" href={selectedTeam.homepageUrl} target="_blank" rel="noreferrer">Nettside →</a>}
+                {selectedTeam.streamUrl && <a className="btn" href={selectedTeam.streamUrl} target="_blank" rel="noreferrer">Stream →</a>}
               </div>
             </div>
           </div>
@@ -855,7 +951,7 @@ function App(){
       )}
 
       {/* MATCHES TAB */}
-      {tab === "matches" && (
+      {tab === "matches" && !selectedTeam && (
         <>
           {visibleMatches.length ? (
             <div className="grid">
@@ -879,7 +975,3 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
-
-
-
-
