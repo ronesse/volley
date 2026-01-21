@@ -23,6 +23,23 @@
       --radius: 18px;
     }
 
+    /* Tema-override via data-theme på body */
+    body[data-theme="light"] {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --border: #e5e6eb;
+      --text: #111827;
+      --muted: #6b7280;
+    }
+
+    body[data-theme="dark"] {
+      --bg: #020617;
+      --card: #020617;
+      --border: #1f2937;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -73,7 +90,7 @@
       border-radius: 999px;
       padding: 6px 10px;
       font-size: 12px;
-      color: #111827;
+      color: var(--text);
       user-select: none;
     }
 
@@ -92,6 +109,23 @@
       display: inline-block;
     }
     .dot.gray { background: #9ca3af; }
+
+    /* Tema-knapp */
+    .themeToggle {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .themeToggle:hover {
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+    }
 
     /* én kamp per linje – kompakt liste */
     .grid {
@@ -117,13 +151,13 @@
     }
 
     .card:hover {
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.09);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
       transform: translateY(-1px);
     }
 
     .card.focused {
       border-color: #111827;
-      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.35);
       transform: translateY(-2px);
       padding: 20px 24px;
     }
@@ -155,11 +189,11 @@
     .status {
       font-size: 12px;
       border: 1px solid var(--border);
-      background: #fafafa;
+      background: #11182708;
       border-radius: 999px;
       padding: 6px 10px;
       white-space: nowrap;
-      color: #111827;
+      color: var(--text);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -416,7 +450,7 @@
       background: #020617;
     }
 
-    /* Serve-ikon – nå overlay så tallene aldri flytter seg */
+    /* Serve-ikon – overlay så tallene aldri flytter seg */
 
     /* wrapper rundt poengtall */
     .pointWrap {
@@ -450,10 +484,17 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      white-space: nowrap;
     }
 
     .card.focused .serveIcon {
       font-size: 20px;
+    }
+
+    .serveIconInner {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
     }
 
     .serveIcon.home {
@@ -666,9 +707,11 @@
           }
           aria-hidden="true"
         >
-          {hot && isHome && "🔥"}
-          🏐
-          {hot && !isHome && "🔥"}
+          <span className="serveIconInner">
+            {hot && isHome && <span>🔥</span>}
+            <span>🏐</span>
+            {hot && !isHome && <span>🔥</span>}
+          </span>
         </span>
       );
     }
@@ -845,10 +888,16 @@
       const [serve, setServe] = useState({});
       const [playLabel, setPlayLabel] = useState({});
       const [focusedKey, setFocusedKey] = useState(null);
+      const [theme, setTheme] = useState("light");
 
       const pollRef = useRef(null);
       const abortLiveRef = useRef(null);
       const serveRef = useRef({});
+
+      // Sync tema til body data-attribute
+      useEffect(() => {
+        document.body.setAttribute("data-theme", theme);
+      }, [theme]);
 
       const fetchJson = useCallback(async (path, signal) => {
         const res = await fetch(API_BASE + path, {
@@ -982,7 +1031,15 @@
 
       return (
         <div className="wrap">
-          <h1>🏐 Livescore</h1>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <h1>🏐 Livescore</h1>
+            <button
+              className="themeToggle"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            >
+              {theme === "light" ? "🌙 Mørk bakgrunn" : "🌞 Lys bakgrunn"}
+            </button>
+          </div>
 
           <div className="topbar">
             <div className="badges">
