@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Volleyball Livescore</title>
+
+  <!-- React 18 -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel (JSX i browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --border: #e5e6eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    h1 {
+      margin: 6px 0 14px;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: #fafafa;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #111827;
+      user-select: none;
+    }
+
+    .filterBtn {
+      cursor: pointer;
+      outline: none;
+      border: 1px solid var(--border);
+    }
+    .filterBtn:active { transform: translateY(1px); }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #22c55e;
+      display: inline-block;
+    }
+    .dot.gray { background: #9ca3af; }
+
+    /* én kamp per linje – kompakt liste */
+    .grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition:
+        box-shadow 0.15s ease,
+        transform 0.15s ease,
+        border-color 0.15s ease,
+        padding 0.15s ease;
+      width: 100%;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.09);
+      transform: translateY(-1px);
+    }
+
+    .card.focused {
+      border-color: #111827;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      transform: translateY(-2px);
+      padding: 20px 24px;
+    }
+
+    .cardHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .compTitle {
+      font-weight: 850;
+      font-size: 15px;
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sub {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status {
+      font-size: 12px;
+      border: 1px solid var(--border);
+      background: #fafafa;
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+      color: #111827;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .scoreRow {
+      display: grid;
+      grid-template-columns: 1.4fr auto 1.4fr;
+      align-items: center;
+      gap: 18px;
+      margin-top: 4px;
+    }
+
+    .card.focused .scoreRow {
+      margin-top: 16px;
+      gap: 40px;
+    }
+
+    .team {
+      font-weight: 650;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .team.right {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .teamName {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      display: inline-block;
+    }
+
+    .card.focused .teamName {
+      font-size: 16px;
+    }
+
+    .bigScore {
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .pointsMain {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .card.focused .pointsMain {
+      font-size: 40px;
+    }
+
+    .points {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .card.focused .points {
+      font-size: 14px;
+    }
+
+    .pointVal {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 28px;
+      padding: 0 6px;
+      border-radius: 8px;
+    }
+
+    .pointSep {
+      padding: 0 4px;
+    }
+
+    @keyframes scoreBlink {
+      0%, 100% { background: transparent; }
+      25%, 75% { background: #fef3c7; }
+      50% { background: #facc15; }
+    }
+
+    .pointVal.blinkScore {
+      animation: scoreBlink 0.7s ease-in-out 2;
+    }
+
+    /* kompakt sett-rad */
+    .setline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .setbox {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px 4px;
+      background: #fcfcfc;
+      text-align: center;
+    }
+
+    .setbox .label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .setbox .val {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .card.focused .setline {
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .card.focused .setbox {
+      padding: 8px 6px;
+      border-radius: 12px;
+    }
+
+    .card.focused .setbox .label {
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .card.focused .setbox .val {
+      font-size: 14px;
+    }
+
+    .meta {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .alert {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #f2b8b8;
+      background: #fff5f5;
+      border-radius: 12px;
+      color: #7f1d1d;
+    }
+
+    /* teamlogo – større i liste, ekstra stor i fokus */
+    .logoBox {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #e5e7eb;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+
+    .card.focused .logoBox {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+    }
+
+    .logoBox img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 10px 10px;
+      }
+      .card.focused {
+        padding: 16px 16px;
+      }
+      .scoreRow {
+        gap: 12px;
+      }
+      .card.focused .scoreRow {
+        gap: 20px;
+      }
+      .pointsMain {
+        font-size: 22px;
+      }
+      .card.focused .pointsMain {
+        font-size: 30px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .logoBox { width: 24px; height: 24px; border-radius: 6px; }
+      .card.focused .logoBox { width: 32px; height: 32px; }
+      .scoreRow {
+        grid-template-columns: 1fr;
+        row-gap: 6px;
+        text-align: center;
+      }
+      .team.right {
+        justify-content: center;
+        text-align: center;
+      }
+    }
+
+    .focusBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .focusInfo {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .backBtn {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #111827;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .backBtn:hover {
+      background: #020617;
+    }
+
+    /* slot for serve-ikon – fast bredde/høyde, stabil layout */
+    .serveSlot {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .card.focused .serveSlot {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* emoji-ikon */
+    .serveIcon {
+      font-size: 18px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card.focused .serveIcon {
+      font-size: 20px;
+    }
+
+    .serveIcon.home {
+      color: #2563eb;
+    }
+
+    .serveIcon.away {
+      color: #dc2626;
+    }
+
+    /* HOT: kun lys/opacity – ingen scale */
+    @keyframes hotGlow {
+      0%, 100% { opacity: 1; filter: none; }
+      50% { opacity: 0.7; filter: drop-shadow(0 0 4px currentColor); }
+    }
+
+    .serveIcon.hot {
+      animation: hotGlow 1.1s ease-in-out infinite;
+    }
+
+    /* poengtall – fast bredde */
+    .pointNumber {
+      display: inline-block;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    /* Serve/side-out/break-point labels i fokusvisning */
+    .serveInfoRow {
+      margin-top: 4px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #4b5563;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      align-items: center;
+    }
+
+    .playLabel {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      font-size: 10px;
+    }
+
+    .playLabel.break-point {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .playLabel.side-out {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useCallback, useEffect, useMemo, useRef, useState, memo } = React;
+
+    const API_BASE = "https://volleyball.ronesse.no";
+    const POLL_MS = 5000;
+
+    function safeArray(x) { return Array.isArray(x) ? x : []; }
+
+    function formatTs(tsSeconds) {
+      if (!tsSeconds) return "";
+      const d = new Date(tsSeconds * 1000);
+      return d.toLocaleString("nb-NO", {
+        hour: "2-digit",
+        minute: "2-digit",
+        day: "2-digit",
+        month: "short",
+      });
+    }
+
+    function liveLabel(statusType) {
+      const t = String(statusType || "").toLowerCase();
+      if (t.includes("inprogress") || t.includes("live") || t.includes("inplay")) return "LIVE";
+      if (t.includes("finished") || t.includes("ended")) return "SLUTT";
+      if (t.includes("not") || t.includes("sched")) return "KOMMER";
+      return statusType || "—";
+    }
+
+    function isLiveStatus(statusType) {
+      const t = String(statusType || "").toLowerCase();
+      return t.includes("inprogress") || t.includes("live") || t.includes("inplay");
+    }
+
+    function statusDot(statusType) {
+      const t = String(statusType || "").toLowerCase();
+      if (t.includes("inprogress") || t.includes("live") || t.includes("inplay")) return "dot";
+      if (t.includes("finished") || t.includes("ended")) return "dot gray";
+      return "dot gray";
+    }
+
+    function normalizeGroupType(v) {
+      if (v == null) return null;
+      const s = String(v).trim().toLowerCase();
+      if (!s) return null;
+      if (s === "mizuno") return "mizuno";
+      if (s === "abroad") return "abroad";
+      return s;
+    }
+
+    // finn pågående sett + poeng
+    function currentPoints(ev) {
+      let setNo = null;
+      const m = String(ev.status_desc || "").match(/(\d+)/);
+      if (m) setNo = Number(m[1]);
+
+      if (!setNo) {
+        for (let i = 5; i >= 1; i--) {
+          if (ev["home_p" + i] != null || ev["away_p" + i] != null) { setNo = i; break; }
+        }
+      }
+
+      return {
+        setNo: setNo,
+        home: setNo ? ev["home_p" + setNo] : null,
+        away: setNo ? ev["away_p" + setNo] : null,
+      };
+    }
+
+    const FILTERS = [
+      { key: "all", label: "Alle", empty: "Det er ingen pågående kamper for øyeblikket." },
+      { key: "mizuno", label: "Mizuno Norge", empty: "Det er ingen pågående kamper i Norsk Mizunoliga." },
+      { key: "abroad", label: "Norske spillere i utlandet", empty: "Det er ingen norske spillere i aksjon for øyeblikket." },
+    ];
+
+    const SetBox = memo(function SetBox(props) {
+      const style = props.highlight ? { borderColor: "#c7d2fe", background: "#eef2ff" } : null;
+      return (
+        <div className="setbox" style={style}>
+          <div className="label">{props.label}</div>
+          <div className="val">{props.home ?? "—"} - {props.away ?? "—"}</div>
+        </div>
+      );
+    });
+
+    // logo-caching
+    const imgStatusCache = new Map();
+
+    function useImageStatus(src) {
+      const [status, setStatus] = useState(src ? (imgStatusCache.get(src) || "loading") : "none");
+
+      useEffect(() => {
+        if (!src) { setStatus("none"); return; }
+
+        const cached = imgStatusCache.get(src);
+        if (cached) { setStatus(cached); return; }
+
+        setStatus("loading");
+        const img = new Image();
+
+        img.onload = function () {
+          imgStatusCache.set(src, "ok");
+          setStatus("ok");
+        };
+
+        img.onerror = function () {
+          imgStatusCache.set(src, "fail");
+          setStatus("fail");
+        };
+
+        img.src = src;
+      }, [src]);
+
+      return status;
+    }
+
+    function LogoBox(props) {
+      const src = props.src;
+      const status = useImageStatus(src);
+
+      if (!src || status === "fail" || status === "none" || status === "loading") {
+        return <span className="logoBox" aria-hidden="true"></span>;
+      }
+
+      return (
+        <span className="logoBox" aria-hidden="true">
+          <img src={src} alt="" loading="lazy" />
+        </span>
+      );
+    }
+
+    function ServeIcon({ side, hot }) {
+      const className =
+        "serveIcon " +
+        (side === "home" ? "home" : "away") +
+        (hot ? " hot" : "");
+
+      const isHome = side === "home";
+
+      return (
+        <span
+          className={className}
+          title={
+            hot
+              ? "Break-point (poeng på egen serve)"
+              : "Server"
+          }
+          aria-hidden="true"
+        >
+          {hot && isHome && "🔥"}
+          🏐
+          {hot && !isHome && "🔥"}
+        </span>
+      );
+    }
+
+    function getHomeId(ev) { return ev.home_team_id ?? ev.home_teams_id ?? null; }
+    function getAwayId(ev) { return ev.away_team_id ?? ev.away_teams_id ?? null; }
+
+    function getTournamentId(ev) {
+      if (ev.tournament_id != null) return ev.tournament_id;
+      if (ev.tournamentId != null) return ev.tournamentId;
+      if (ev.tournament && ev.tournament.id != null) return ev.tournament.id;
+      if (typeof ev.tournament === "number" || typeof ev.tournament === "string") return ev.tournament;
+      return null;
+    }
+
+    function teamLogoUrl(teamId) {
+      if (teamId == null) return null;
+      return API_BASE + "/img/teams/" + String(teamId) + ".png";
+    }
+
+    function tournamentLogoUrl(tournamentId) {
+      if (tournamentId == null) return null;
+      return API_BASE + "/img/tournaments/" + String(tournamentId) + ".png";
+    }
+
+    function compHeaderText(ev) {
+      const t = ev.tournament_name ? String(ev.tournament_name) : "";
+      const s = ev.season_name ? String(ev.season_name) : "";
+      if (t && s) return t + " · " + s;
+      return t || s || "—";
+    }
+
+    function eventKey(ev) {
+      return (
+        ev.event_id ??
+        ev.custom_id ??
+        String(ev.start_ts ?? "") + "-" + String(ev.home_team_name ?? "") + "-" + String(ev.away_team_name ?? "")
+      );
+    }
+
+    function EventCard(props) {
+      const { ev, flashInfo, serveInfo, playLabelInfo, isFocused, onClick } = props;
+
+      const label = liveLabel(ev.status_type);
+      const p = currentPoints(ev);
+
+      const setsHome = (ev.home_sets ?? 0);
+      const setsAway = (ev.away_sets ?? 0);
+
+      const currentSetText = p.setNo ? (String(p.setNo) + ". sett") : (ev.status_desc || "Pågår");
+
+      const homeId = getHomeId(ev);
+      const awayId = getAwayId(ev);
+      const tournamentId = getTournamentId(ev);
+
+      const homeLogo = teamLogoUrl(homeId);
+      const awayLogo = teamLogoUrl(awayId);
+      const tourLogo = tournamentLogoUrl(tournamentId);
+
+      const isServingHome = serveInfo && serveInfo.side === "home";
+      const isServingAway = serveInfo && serveInfo.side === "away";
+      const hotHome = isServingHome && serveInfo.hot;
+      const hotAway = isServingAway && serveInfo.hot;
+
+      const cls = "card" + (isFocused ? " focused" : "");
+
+      let playText = null;
+      if (playLabelInfo && playLabelInfo.type === "break-point") {
+        playText = "Break-point";
+      } else if (playLabelInfo && playLabelInfo.type === "side-out") {
+        playText = "Side-out";
+      }
+
+      return (
+        <div className={cls} onClick={onClick} role="button">
+          <div className="cardHeader">
+            <div>
+              <div className="compTitle">
+                <LogoBox src={tourLogo} />
+                <span>{compHeaderText(ev)}</span>
+              </div>
+              <div className="sub">{ev.group_type ? String(ev.group_type) : ""}</div>
+            </div>
+
+            <div className="status" title={ev.status_desc || ""}>
+              <span className={statusDot(ev.status_type)}></span>
+              {label + (ev.status_desc ? " · " + String(ev.status_desc) : "")}
+            </div>
+          </div>
+
+          <div className="scoreRow">
+            <div className="team">
+              <LogoBox src={homeLogo} />
+              <span className="teamName">{ev.home_team_name}</span>
+            </div>
+
+            <div className="bigScore">
+              <div className="pointsMain">
+                {/* Hjemme: slot til venstre for poeng */}
+                <span
+                  key={"ph-" + (flashInfo.home || 0)}
+                  className={"pointVal" + (flashInfo.home ? " blinkScore" : "")}
+                >
+                  <span className="serveSlot">
+                    {isServingHome && <ServeIcon side="home" hot={hotHome} />}
+                  </span>
+                  <span className="pointNumber">{p.home ?? "—"}</span>
+                </span>
+
+                <span className="pointSep">-</span>
+
+                {/* Borte: slot til høyre for poeng */}
+                <span
+                  key={"pa-" + (flashInfo.away || 0)}
+                  className={"pointVal" + (flashInfo.away ? " blinkScore" : "")}
+                >
+                  <span className="pointNumber">{p.away ?? "—"}</span>
+                  <span className="serveSlot">
+                    {isServingAway && <ServeIcon side="away" hot={hotAway} />}
+                  </span>
+                </span>
+              </div>
+
+              <div className="points">
+                {setsHome} - {setsAway} i sett
+                {p.setNo ? (" · " + currentSetText) : ""}
+              </div>
+
+              {isFocused && (isServingHome || isServingAway) && (
+                <div className="serveInfoRow">
+                  <div>
+                    Serve · {isServingHome ? ev.home_team_name : ev.away_team_name}
+                  </div>
+                  {playText && (
+                    <div className={
+                      "playLabel " +
+                      (playLabelInfo.type === "break-point" ? "break-point" : "side-out")
+                    }>
+                      {playText}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="team right">
+              <LogoBox src={awayLogo} />
+              <span className="teamName">{ev.away_team_name}</span>
+            </div>
+          </div>
+
+          <div classNam
