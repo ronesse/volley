@@ -183,7 +183,7 @@
       font-size: 14px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       min-width: 0;
     }
 
@@ -317,11 +317,11 @@
       color: #7f1d1d;
     }
 
-    /* teamlogo – større i liste, ekstra stor i fokus */
+    /* store teamlogoer både i liste og fokus */
     .logoBox {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
       background: #e5e7eb;
       border: 1px solid var(--border);
       display: inline-flex;
@@ -332,9 +332,9 @@
     }
 
     .card.focused .logoBox {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
     }
 
     .logoBox img {
@@ -363,11 +363,17 @@
       .card.focused .pointsMain {
         font-size: 30px;
       }
+      .logoBox {
+        width: 34px;
+        height: 34px;
+      }
+      .card.focused .logoBox {
+        width: 40px;
+        height: 40px;
+      }
     }
 
     @media (max-width: 480px) {
-      .logoBox { width: 24px; height: 24px; border-radius: 6px; }
-      .card.focused .logoBox { width: 32px; height: 32px; }
       .scoreRow {
         grid-template-columns: 1fr;
         row-gap: 6px;
@@ -410,22 +416,34 @@
       background: #020617;
     }
 
-    /* slot for serve-ikon – fast bredde/høyde, stabil layout */
-    .serveSlot {
-      width: 20px;
-      height: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+    /* Serve-ikon – nå overlay så tallene aldri flytter seg */
+
+    /* wrapper rundt poengtall */
+    .pointWrap {
+      position: relative;
+      display: inline-block;
+      min-width: 26px;
+      text-align: center;
     }
 
-    .card.focused .serveSlot {
-      width: 22px;
-      height: 22px;
+    /* ikonposisjon – til venstre/høyre for tallet */
+    .pointWrap.home .serveIcon {
+      position: absolute;
+      right: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-right: 6px;
     }
 
-    /* emoji-ikon */
+    .pointWrap.away .serveIcon {
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      margin-left: 6px;
+    }
+
+    /* selve emoji-ikonet */
     .serveIcon {
       font-size: 18px;
       line-height: 1;
@@ -459,7 +477,7 @@
     /* poengtall – fast bredde */
     .pointNumber {
       display: inline-block;
-      min-width: 18px;
+      min-width: 20px;
       text-align: center;
     }
 
@@ -749,26 +767,26 @@
 
             <div className="bigScore">
               <div className="pointsMain">
-                {/* Hjemme: slot til venstre for poeng */}
+                {/* Hjemme: ikon overlay til venstre for poeng */}
                 <span
                   key={"ph-" + (flashInfo.home || 0)}
                   className={"pointVal" + (flashInfo.home ? " blinkScore" : "")}
                 >
-                  <span className="serveSlot">
+                  <span className="pointWrap home">
+                    <span className="pointNumber">{p.home ?? "—"}</span>
                     {isServingHome && <ServeIcon side="home" hot={hotHome} />}
                   </span>
-                  <span className="pointNumber">{p.home ?? "—"}</span>
                 </span>
 
                 <span className="pointSep">-</span>
 
-                {/* Borte: slot til høyre for poeng */}
+                {/* Borte: ikon overlay til høyre for poeng */}
                 <span
                   key={"pa-" + (flashInfo.away || 0)}
                   className={"pointVal" + (flashInfo.away ? " blinkScore" : "")}
                 >
-                  <span className="pointNumber">{p.away ?? "—"}</span>
-                  <span className="serveSlot">
+                  <span className="pointWrap away">
+                    <span className="pointNumber">{p.away ?? "—"}</span>
                     {isServingAway && <ServeIcon side="away" hot={hotAway} />}
                   </span>
                 </span>
