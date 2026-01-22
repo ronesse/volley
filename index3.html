@@ -311,6 +311,19 @@
     .setbox .val {
       font-size: 12px;
       font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Dark mode: sett-bokser skal være mørke med lyse tall */
+    body[data-theme="dark"] .setbox {
+      background: #020617;
+      border-color: #374151;
+    }
+    body[data-theme="dark"] .setbox .label {
+      color: #9ca3af;
+    }
+    body[data-theme="dark"] .setbox .val {
+      color: #e5e7eb;
     }
 
     .card.focused .setline {
@@ -1004,7 +1017,6 @@
             }
           }
         } catch (err) {
-          // Typisk: ikke støttet, eller krever brukerinteraksjon.
           console.warn("WakeLock request feilet:", err);
         }
       }, []);
@@ -1061,9 +1073,8 @@
 
       const currentFilterObj = FILTERS.find(x => x.key === filter);
 
-      // Wake Lock: hold skjerm våken når en live kamp er i fokus
+      // Wake Lock: hold skjerm våken når en live kamp OG aktivt sett er i fokus
       useEffect(() => {
-        // Finn kamp i fokus (om den finnes)
         let focusedEvent = null;
         if (focusedKey) {
           focusedEvent =
@@ -1072,8 +1083,13 @@
             null;
         }
 
+        const cp = focusedEvent ? currentPoints(focusedEvent) : null;
+        const hasActiveSet = !!(cp && cp.setNo != null);
+
         const shouldKeepAwake =
-          !!focusedEvent && isLiveStatus(focusedEvent.status_type);
+          !!focusedEvent &&
+          isLiveStatus(focusedEvent.status_type) &&
+          hasActiveSet;
 
         if (shouldKeepAwake) {
           requestWakeLock();
@@ -1081,7 +1097,6 @@
           releaseWakeLock();
         }
 
-        // Hvis siden blir skjult og så synlig igjen, må vi ofte re-requeste wake lock
         function handleVisibility() {
           if (document.visibilityState === "visible" && shouldKeepAwake) {
             requestWakeLock();
@@ -1155,7 +1170,7 @@
 
           {focusedKey && (
             <div className="focusInfo">
-              Viser én kamp i fokus. Skjermen holdes våken så lenge kampen er LIVE (der det støttes av nettleseren).
+              Viser én kamp i fokus. Skjermen holdes våken bare mens et sett faktisk pågår (der det støttes av nettleseren).
             </div>
           )}
 
