@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+  <meta charset="UTF-8" />
+  <title>Volleyball LiveScore</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --bg-elevated: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.1);
+      --accent-border: rgba(56, 189, 248, 0.4);
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --danger: #f97373;
+      --card-border: #1f2937;
+      --pill-bg: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b, #020617);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    header {
+      margin-bottom: 1.5rem;
+    }
+
+    header h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    header h1 span.emoji {
+      font-size: 1.6rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-button {
+      border: 1px solid transparent;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background-color: var(--pill-bg);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+
+    .tab-button span.count {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid #1f2937;
+      color: var(--text-muted);
+    }
+
+    .tab-button.active {
+      background-color: var(--accent-soft);
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+
+    .tab-button.active span.count {
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #bbf7d0;
+      font-size: 0.75rem;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: #4ade80;
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.8);
+    }
+
+    .match-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .match-card {
+      background: linear-gradient(135deg, #020617, #020617);
+      border-radius: 0.9rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.6);
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.6rem;
+      gap: 0.75rem;
+    }
+
+    .match-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .tournament-name {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .round-name {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .start-time {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .teams-row {
+      display: grid;
+      grid-template-columns: 3fr auto 3fr;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .team-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .team-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .score-block {
+      text-align: center;
+      min-width: 70px;
+    }
+
+    .sets-score {
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .sets-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .set-detail {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    .empty-state {
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 0.9rem;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px dashed #1f2937;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid #1f2937;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text-muted);
+    }
+
+    .tag.league {
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #e0f2fe;
+    }
+
+    .tag.country {
+      border-color: rgba(74, 222, 128, 0.3);
+      color: #bbf7d0;
+    }
+
+    .loading,
+    .error {
+      padding: 1.2rem;
+      border-radius: 0.75rem;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid #1f2937;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .error {
+      border-color: rgba(248, 113, 113, 0.5);
+      color: #fecaca;
+    }
+
+    .loading-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #1f2937;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 1rem;
+      }
+
+      .teams-row {
+        grid-template-columns: 1fr;
+        text-align: left;
+      }
+
+      .score-block {
+        order: -1;
+        text-align: left;
+      }
+
+      .sets-score {
+        font-size: 1.1rem;
+      }
+
+      .match-card {
+        padding: 0.85rem 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1><span class="emoji">🏐</span> LiveScore Volleyball</h1>
+      <p>Gruppert i Mizuno Norge, norske spillere i utlandet og andre livekamper.</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-button active" data-group="mizuno">
+        Mizuno Norge
+        <span class="count" id="count-mizuno">0</span>
+      </button>
+      <button class="tab-button" data-group="abroad">
+        Norske spillere i utlandet
+        <span class="count" id="count-abroad">0</span>
+      </button>
+      <button class="tab-button" data-group="other">
+        Andre
+        <span class="count" id="count-other">0</span>
+      </button>
+    </div>
+
+    <div id="status-area"></div>
+    <div id="matches-container"></div>
+  </div>
+
+  <script>
+    const GROUPS = {
+      MIZUNO: "mizuno",
+      ABROAD: "abroad",
+      OTHER: "other",
+    };
+
+    const state = {
+      activeGroup: GROUPS.MIZUNO,
+      groupedMatches: {
+        [GROUPS.MIZUNO]: [],
+        [GROUPS.ABROAD]: [],
+        [GROUPS.OTHER]: [],
+      },
+    };
+
+    function createStatusMessage(type, message) {
+      const div = document.createElement("div");
+      div.className = type === "error" ? "error" : "loading";
+
+      if (type === "loading") {
+        const spinner = document.createElement("div");
+        spinner.className = "loading-spinner";
+        div.appendChild(spinner);
+      }
+
+      const text = document.createElement("span");
+      text.textContent = message;
+      div.appendChild(text);
+
+      return div;
+    }
+
+    function setStatus(type, message) {
+      const statusArea = document.getElementById("status-area");
+      statusArea.innerHTML = "";
+      if (message) {
+        statusArea.appendChild(createStatusMessage(type, message));
+      }
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url, {
+        headers: { accept: "application/json" },
+      });
+      if (!res.ok) {
+        throw new Error(`Feil ved kall til ${url}: ${res.status}`);
+      }
+      return res.json();
+    }
+
+    function buildTeamIndex(teams) {
+      const bySofaId = new Map();
+      for (const team of teams) {
+        const rawId = team.sofascore_team_id;
+        if (rawId === null || rawId === undefined || rawId === "") continue;
+        const key = Number(rawId);
+        if (!Number.isNaN(key)) {
+          bySofaId.set(key, team);
+        }
+      }
+      return bySofaId;
+    }
+
+    function classifyMatch(match, teamIndex) {
+      const home = teamIndex.get(match.home_team_id);
+      const away = teamIndex.get(match.away_team_id);
+
+      const hasHome = !!home;
+      const hasAway = !!away;
+
+      const hasNorwegian =
+        (home && home.country === "Norge") ||
+        (away && away.country === "Norge");
+
+      const anyKnown = hasHome || hasAway;
+
+      if (hasNorwegian) {
+        return GROUPS.MIZUNO;
+      }
+      if (anyKnown) {
+        return GROUPS.ABROAD;
+      }
+      return GROUPS.OTHER;
+    }
+
+    function formatStartTime(match) {
+      try {
+        const date = new Date(match.start_ts * 1000);
+        return date.toLocaleString("nb-NO", {
+          weekday: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } catch {
+        return match.start_utc || "";
+      }
+    }
+
+    function formatSetDetails(match) {
+      const home = [match.home_p1, match.home_p2, match.home_p3, match.home_p4, match.home_p5];
+      const away = [match.away_p1, match.away_p2, match.away_p3, match.away_p4, match.away_p5];
+      const parts = [];
+      for (let i = 0; i < home.length; i++) {
+        if (home[i] == null || away[i] == null) continue;
+        parts.push(`${home[i]}–${away[i]}`);
+      }
+      return parts.join(", ");
+    }
+
+    function render() {
+      const container = document.getElementById("matches-container");
+      container.innerHTML = "";
+
+      const matches = state.groupedMatches[state.activeGroup] || [];
+
+      // Oppdater counts på knappene
+      document.getElementById("count-mizuno").textContent =
+        state.groupedMatches[GROUPS.MIZUNO].length;
+      document.getElementById("count-abroad").textContent =
+        state.groupedMatches[GROUPS.ABROAD].length;
+      document.getElementById("count-other").textContent =
+        state.groupedMatches[GROUPS.OTHER].length;
+
+      if (!matches.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = "Ingen livekamper i denne kategorien akkurat nå.";
+        container.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement("div");
+      list.className = "match-list";
+
+      for (const match of matches) {
+        const card = document.createElement("div");
+        card.className = "match-card";
+
+        const header = document.createElement("div");
+        header.className = "match-header";
+
+        const meta = document.createElement("div");
+        meta.className = "match-meta";
+
+        const tour = document.createElement("div");
+        tour.className = "tournament-name";
+        tour.textContent = match.tournament_name;
+
+        const round = document.createElement("div");
+        round.className = "round-name";
+        round.textContent = match.season_name || "";
+
+        meta.appendChild(tour);
+        meta.appendChild(round);
+
+        const right = document.createElement("div");
+        right.className = "start-time";
+        right.textContent = formatStartTime(match);
+
+        header.appendChild(meta);
+        header.appendChild(right);
+
+        const statusLine = document.createElement("div");
+        statusLine.className = "status-line";
+
+        const statusChip = document.createElement("div");
+        statusChip.className = "status-chip";
+
+        const dot = document.createElement("span");
+        dot.className = "status-dot";
+
+        const statusText = document.createElement("span");
+        statusText.textContent = match.status_desc || match.status_type;
+
+        statusChip.appendChild(dot);
+        statusChip.appendChild(statusText);
+
+        statusLine.appendChild(statusChip);
+
+        const setsInfo = document.createElement("div");
+        setsInfo.className = "sets-label";
+        if (match.home_sets != null && match.away_sets != null) {
+          setsInfo.textContent = `${match.home_sets}–${match.away_sets} i sett`;
+        } else {
+          setsInfo.textContent = "Pågår";
+        }
+        statusLine.appendChild(setsInfo);
+
+        const teamsRow = document.createElement("div");
+        teamsRow.className = "teams-row";
+
+        const homeBlock = document.createElement("div");
+        homeBlock.className = "team-block";
+
+        const homeName = document.createElement("div");
+        homeName.className = "team-name";
+        homeName.textContent = match.home_team_name;
+
+        const homeMeta = document.createElement("div");
+        homeMeta.className = "team-meta";
+        homeMeta.textContent = match.home_team_country || "";
+
+        homeBlock.appendChild(homeName);
+        homeBlock.appendChild(homeMeta);
+
+        const scoreBlock = document.createElement("div");
+        scoreBlock.className = "score-block";
+
+        const setsScore = document.createElement("div");
+        setsScore.className = "sets-score";
+        const hs = match.home_sets ?? "-";
+        const as = match.away_sets ?? "-";
+        setsScore.textContent = `${hs} : ${as}`;
+
+        const setsLabel = document.createElement("div");
+        setsLabel.className = "sets-label";
+        setsLabel.textContent = match.status_desc;
+
+        scoreBlock.appendChild(setsScore);
+        scoreBlock.appendChild(setsLabel);
+
+        const awayBlock = document.createElement("div");
+        awayBlock.className = "team-block";
+        const awayName = document.createElement("div");
+        awayName.className = "team-name";
+        awayName.textContent = match.away_team_name;
+
+        const awayMeta = document.createElement("div");
+        awayMeta.className = "team-meta";
+        awayMeta.textContent = match.away_team_country || "";
+
+        awayBlock.appendChild(awayName);
+        awayBlock.appendChild(awayMeta);
+
+        teamsRow.appendChild(homeBlock);
+        teamsRow.appendChild(scoreBlock);
+        teamsRow.appendChild(awayBlock);
+
+        const setDetail = document.createElement("div");
+        setDetail.className = "set-detail";
+        const detailText = formatSetDetails(match);
+        if (detailText) {
+          setDetail.textContent = detailText;
+        }
+
+        const tagRow = document.createElement("div");
+        tagRow.className = "tag-row";
+
+        if (match.tournament_name) {
+          const leagueTag = document.createElement("div");
+          leagueTag.className = "tag league";
+          leagueTag.textContent = match.tournament_name;
+          tagRow.appendChild(leagueTag);
+        }
+
+        if (match.group_label) {
+          const groupTag = document.createElement("div");
+          groupTag.className = "tag";
+          groupTag.textContent = match.group_label;
+          tagRow.appendChild(groupTag);
+        }
+
+        const countrySummary = match.country_summary;
+        if (countrySummary) {
+          const cTag = document.createElement("div");
+          cTag.className = "tag country";
+          cTag.textContent = countrySummary;
+          tagRow.appendChild(cTag);
+        }
+
+        card.appendChild(header);
+        card.appendChild(statusLine);
+        card.appendChild(teamsRow);
+        if (detailText) card.appendChild(setDetail);
+        card.appendChild(tagRow);
+
+        list.appendChild(card);
+      }
+
+      container.appendChild(list);
+    }
+
+    function setupTabs() {
+      const buttons = document.querySelectorAll(".tab-button");
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const group = btn.getAttribute("data-group");
+          if (!group || state.activeGroup === group) return;
+          state.activeGroup = group;
+
+          buttons.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          render();
+        });
+      });
+    }
+
+    async function init() {
+      setupTabs();
+      setStatus("loading", "Laster livekamper og laginfo ...");
+
+      try {
+        const [teams, live] = await Promise.all([
+          fetchJson("https://volleyball.ronesse.no/teams?limit=200&offset=0"),
+          fetchJson("https://volleyball.ronesse.no/live"),
+        ]);
+
+        const teamIndex = buildTeamIndex(teams);
+
+        const enriched = live.map((m) => {
+          const homeTeam = teamIndex.get(m.home_team_id);
+          const awayTeam = teamIndex.get(m.away_team_id);
+
+          const group = classifyMatch(m, teamIndex);
+
+          let groupLabel = "";
+          if (group === GROUPS.MIZUNO) groupLabel = "Mizuno Norge";
+          if (group === GROUPS.ABROAD) groupLabel = "Norske spillere i utlandet";
+          if (group === GROUPS.OTHER) groupLabel = "Andre livekamper";
+
+          const homeCountry = homeTeam ? homeTeam.country : null;
+          const awayCountry = awayTeam ? awayTeam.country : null;
+
+          let countrySummary = "";
+          const uniqueCountries = [...new Set([homeCountry, awayCountry].filter(Boolean))];
+          if (uniqueCountries.length === 1) {
+            countrySummary = uniqueCountries[0];
+          } else if (uniqueCountries.length > 1) {
+            countrySummary = uniqueCountries.join(" / ");
+          }
+
+          return {
+            ...m,
+            home_team_country: homeCountry || "",
+            away_team_country: awayCountry || "",
+            group,
+            group_label: groupLabel,
+            country_summary: countrySummary,
+          };
+        });
+
+        // Sorter innenfor grupper etter start_ts (eldst først)
+        const grouped = {
+          [GROUPS.MIZUNO]: [],
+          [GROUPS.ABROAD]: [],
+          [GROUPS.OTHER]: [],
+        };
+
+        for (const match of enriched) {
+          grouped[match.group].push(match);
+        }
+
+        Object.keys(grouped).forEach((key) => {
+          grouped[key].sort((a, b) => (a.start_ts || 0) - (b.start_ts || 0));
+        });
+
+        state.groupedMatches = grouped;
+        setStatus(null, "");
+        render();
+      } catch (err) {
+        console.error(err);
+        setStatus(
+          "error",
+          "Klarte ikke å laste data. Sjekk nettverk/API, eller prøv å refreshe siden."
+        );
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
