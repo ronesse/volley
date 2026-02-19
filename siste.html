@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <title>Live volleyball – kampkort</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --border-subtle: #e5e7eb;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --live: #059669;
+      --live-soft: #ecfdf3;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+      --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius-lg: 18px;
+      --radius-full: 999px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #e5edff, #f8fafc 40%);
+      color: var(--text);
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 12px 16px 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .title-block h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .title-block p {
+      margin: 4px 0 0 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .title-block code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.8rem;
+      background: #f1f5f9;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button,
+    .chip,
+    .badge {
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    button {
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+      transition: background 0.12s, transform 0.05s, box-shadow 0.12s;
+    }
+
+    button:hover {
+      background: #f9fafb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+    }
+
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+    }
+
+    .badge {
+      font-weight: 500;
+      padding-inline: 10px;
+      border-color: var(--border-subtle);
+    }
+
+    .badge-live {
+      background: var(--live-soft);
+      border-color: #bbf7d0;
+      color: var(--live);
+    }
+
+    .badge-neutral {
+      background: #f9fafb;
+      color: var(--text-muted);
+    }
+
+    .badge-soon {
+      background: #fffbeb;
+      border-color: #facc15;
+      color: #854d0e;
+    }
+
+    .badge-done {
+      background: #f9fafb;
+      color: var(--text-muted);
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 16px;
+      flex: 1;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 960px) {
+      .layout {
+        grid-template-columns: 360px minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .card-inner {
+      padding: 16px;
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-header h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    .card-header p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .input-row {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-row input[type="text"] {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 0.8rem;
+      outline: none;
+      background: #f9fafb;
+    }
+
+    .input-row input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+      background: #ffffff;
+    }
+
+    .small-btn {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .small-btn-secondary {
+      background: #f9fafb;
+      box-shadow: none;
+    }
+
+    .small-btn-secondary:hover {
+      background: #f1f5f9;
+    }
+
+    .teams-list {
+      max-height: 70vh;
+      overflow: auto;
+      border-top: 1px solid var(--border);
+    }
+
+    .teams-list ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .teams-list li {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      cursor: pointer;
+    }
+
+    .teams-list li:hover {
+      background: #f9fafb;
+    }
+
+    .team-line {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .team-info-name {
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .team-info-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .team-info-meta {
+      font-size: 0.7rem;
+      color: #6b7280;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      margin-top: 2px;
+    }
+
+    .teams-empty,
+    .matches-empty,
+    .info-box {
+      padding: 12px 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .info-box {
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--border);
+      background: #f9fafb;
+      margin-bottom: 8px;
+    }
+
+    .matches-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .matches-header h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .match-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .match-card {
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(203, 213, 225, 0.9);
+      background: rgba(255, 255, 255, 0.96);
+      padding: 14px 14px 12px 14px;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .match-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .tournament-line {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .badge-row {
+      margin-top: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .score-block {
+      text-align: right;
+      min-width: 70px;
+    }
+
+    .score-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .score-value {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .teams-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+
+    .team-chip {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .team-chip-name {
+      font-size: 0.86rem;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .team-chip-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .team-chip-right {
+      text-align: right;
+    }
+
+    .vs {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding-inline: 4px;
+    }
+
+    .sets-box {
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      background: #f8fafc;
+      padding: 8px 10px;
+    }
+
+    .sets-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .sets-row {
+      margin-top: 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .set-pill {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .match-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .monosmall {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.72rem;
+    }
+
+    footer {
+      padding: 12px 16px 30px 16px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    footer .footer-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .error-box {
+      margin-top: 8px;
+      margin-bottom: 4px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: var(--danger-soft);
+      border: 1px solid #fecaca;
+      font-size: 0.8rem;
+      color: var(--danger);
+    }
+
+    .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-top: 4px;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .checkbox-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: #f9fafb;
+      cursor: pointer;
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="header-inner">
+      <div class="title-block">
+        <h1>Live volleyball</h1>
+        <p>
+          Kampkort fra <code>/live</code> filtrert på lag du følger
+          (<code>home_team_id/away_team_id = sofascore_team_id</code>).
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <button id="refreshLiveBtn">Oppdater nå</button>
+
+        <div class="checkbox-row">
+          <label>
+            <input type="checkbox" id="autoRefreshCheckbox" checked>
+            Auto (15s)
+          </label>
+          <label>
+            <input type="checkbox" id="showOnlyFollowedCheckbox" checked>
+            Bare fulgte
+          </label>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="errorBox" class="error-box" style="display:none;"></div>
+
+    <div class="layout">
+      <!-- Sidebar: lag -->
+      <aside class="card">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div>
+              <h2>Lag du følger</h2>
+              <p>Velg lag fra <code>/teams</code>. Valg lagres i nettleseren.</p>
+            </div>
+            <span id="followedCountBadge" class="badge badge-neutral">0 valgt</span>
+          </div>
+
+          <div class="input-row">
+            <input type="text" id="teamSearchInput" placeholder="Søk lag, land, liga…">
+            <button id="reloadTeamsBtn" class="small-btn small-btn-secondary">Last lag</button>
+          </div>
+
+          <div class="checkbox-row">
+            <button id="clearFollowedBtn" class="small-btn small-btn-secondary">Nullstill</button>
+            <button id="showAllTeamsBtn" class="small-btn small-btn-secondary">Vis alle lag</button>
+          </div>
+        </div>
+
+        <div id="teamsList" class="teams-list">
+          <div class="teams-empty">Laster lag…</div>
+        </div>
+      </aside>
+
+      <!-- Main: live kamper -->
+      <section>
+        <div class="matches-header">
+          <h2>Live-kamper</h2>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span id="matchCountBadge" class="badge badge-neutral">0 kamper</span>
+            <span id="liveLoadingBadge" class="badge badge-neutral" style="display:none;">Laster…</span>
+          </div>
+        </div>
+
+        <div id="matchesContainer"></div>
+
+        <div class="info-box">
+          <strong>Notat:</strong>
+          <ul style="margin:4px 0 0 14px;padding:0;font-size:0.76rem;">
+            <li>Tid vises i <code>Europe/Oslo</code> basert på <code>start_ts</code> (epoch).</li>
+            <li>Kampkort bruker settinfo (<code>home_p1..home_p5 / away_p1..away_p5</code>) når den finnes.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      Bygg videre: legg til stream-lenker (fra <code>stream_url</code> på lag), egne fargeprofiler per klubb,
+      og websockets/SSE for enda raskere oppdateringer.
+    </div>
+  </footer>
+</div>
+
+<script>
+  (function() {
+    const LIVE_URL = "https://volleyball.ronesse.no/live";
+    const TEAMS_URL = "https://volleyball.ronesse.no/teams?limit=200&offset=0";
+    const STORAGE_KEY = "vb_followed_team_ids_v1";
+
+    /*** Helpers ***/
+    function toNumberMaybe(v) {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function formatOsloFromEpochSeconds(tsSeconds) {
+      if (!tsSeconds) return "";
+      try {
+        const d = new Date(tsSeconds * 1000);
+        return new Intl.DateTimeFormat("no-NO", {
+          timeZone: "Europe/Oslo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23"
+        }).format(d);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function pickSetPairs(match) {
+      const pairs = [
+        [match.home_p1, match.away_p1],
+        [match.home_p2, match.away_p2],
+        [match.home_p3, match.away_p3],
+        [match.home_p4, match.away_p4],
+        [match.home_p5, match.away_p5]
+      ];
+      const result = [];
+      for (let i = 0; i < pairs.length; i++) {
+        const h = pairs[i][0];
+        const a = pairs[i][1];
+        if (h !== null && h !== undefined || a !== null && a !== undefined) {
+          result.push({
+            setNo: i + 1,
+            home: h != null ? h : null,
+            away: a != null ? a : null
+          });
+        }
+      }
+      return result;
+    }
+
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    /*** State ***/
+    let teams = [];
+    let liveMatches = [];
+    let followedIds = [];
+    let showOnlyFollowed = true;
+    let autoRefresh = true;
+    let refreshTimer = null;
+
+    /*** DOM ***/
+    const errorBox = document.getElementById("errorBox");
+    const teamsListDiv = document.getElementById("teamsList");
+    const matchesContainer = document.getElementById("matchesContainer");
+
+    const matchedCountBadge = document.getElementById("matchCountBadge");
+    const followedCountBadge = document.getElementById("followedCountBadge");
+    const liveLoadingBadge = document.getElementById("liveLoadingBadge");
+
+    const teamSearchInput = document.getElementById("teamSearchInput");
+    const reloadTeamsBtn = document.getElementById("reloadTeamsBtn");
+    const clearFollowedBtn = document.getElementById("clearFollowedBtn");
+    const showAllTeamsBtn = document.getElementById("showAllTeamsBtn");
+    const refreshLiveBtn = document.getElementById("refreshLiveBtn");
+
+    const autoRefreshCheckbox = document.getElementById("autoRefreshCheckbox");
+    const showOnlyFollowedCheckbox = document.getElementById("showOnlyFollowedCheckbox");
+
+    /*** Storage ***/
+    function loadFollowedFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.map(toNumberMaybe).filter(x => x !== null);
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveFollowedToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(followedIds));
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function updateFollowedCountBadge() {
+      followedCountBadge.textContent = followedIds.length + " valgt";
+      if (followedIds.length > 0) {
+        followedCountBadge.classList.remove("badge-neutral");
+        followedCountBadge.classList.add("badge-soon");
+      } else {
+        followedCountBadge.classList.add("badge-neutral");
+        followedCountBadge.classList.remove("badge-soon");
+      }
+    }
+
+    /*** Fetch ***/
+    async function fetchTeams() {
+      teamsListDiv.innerHTML = '<div class="teams-empty">Laster lag…</div>';
+      try {
+        const res = await fetch(TEAMS_URL, { headers: { accept: "application/json" } });
+        if (!res.ok) throw new Error("Teams HTTP " + res.status);
+        const data = await res.json();
+        teams = Array.isArray(data) ? data : [];
+        renderTeamsList();
+      } catch (e) {
+        showError(e.message || String(e));
+        teamsListDiv.innerHTML = '<div class="teams-empty">Kunne ikke laste lag.</div>';
+      }
+    }
+
+    async function fetchLive() {
+      liveLoadingBadge.style.display = "inline-flex";
+      try {
+        const res = await fetch(LIVE_URL, { headers: { accept: "application/json" } });
+        if (!res.ok) throw new Error("Live HTTP " + res.status);
+        const data = await res.json();
+        liveMatches = Array.isArray(data) ? data : [];
+        renderMatches();
+      } catch (e) {
+        showError(e.message || String(e));
+      } finally {
+        liveLoadingBadge.style.display = "none";
+      }
+    }
+
+    /*** Error ***/
+    function showError(msg) {
+      errorBox.textContent = "Feil: " + msg;
+      errorBox.style.display = "block";
+      setTimeout(() => {
+        errorBox.style.display = "none";
+      }, 8000);
+    }
+
+    /*** Render teams ***/
+    function renderTeamsList() {
+      const q = (teamSearchInput.value || "").trim().toLowerCase();
+      const followedSet = new Set(followedIds);
+
+      const sorted = teams.slice().sort((a, b) => {
+        const an = String(a.name || "");
+        const bn = String(b.name || "");
+        return an.localeCompare(bn, "no");
+      });
+
+      const filtered = sorted.filter(t => {
+        const id = toNumberMaybe(t.sofascore_team_id);
+        if (id === null) return false;
+
+        const matchesQuery =
+          !q ||
+          String(t.name || "").toLowerCase().includes(q) ||
+          String(t.country || "").toLowerCase().includes(q) ||
+          String(t.league || "").toLowerCase().includes(q);
+
+        if (!matchesQuery) return false;
+
+        if (!showOnlyFollowed) return true;
+        return followedSet.has(id);
+      });
+
+      if (!teams.length) {
+        teamsListDiv.innerHTML = '<div class="teams-empty">Ingen lag.</div>';
+        return;
+      }
+
+      if (!filtered.length) {
+        teamsListDiv.innerHTML = '<div class="teams-empty">Ingen lag matcher søket.</div>';
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      filtered.forEach(team => {
+        const sofaId = toNumberMaybe(team.sofascore_team_id);
+        if (sofaId === null) return;
+
+        const li = document.createElement("li");
+
+        const checked = followedSet.has(sofaId);
+
+        li.innerHTML = `
+          <div class="team-line">
+            <input type="checkbox" ${checked ? "checked" : ""} style="margin-top:3px;">
+            <div class="team-info">
+              <div class="team-info-name">${escapeHTML(team.name || "")}</div>
+              <div class="team-info-sub">${escapeHTML(team.country || "")}${team.league ? " • " + escapeHTML(team.league) : ""}</div>
+              <div class="team-info-meta">sofascore_team_id: ${escapeHTML(sofaId)}</div>
+            </div>
+          </div>
+        `;
+
+        const checkbox = li.querySelector("input[type=checkbox]");
+        checkbox.addEventListener("click", function(ev) {
+          ev.stopPropagation();
+          toggleFollow(sofaId);
+        });
+
+        li.addEventListener("click", function() {
+          toggleFollow(sofaId);
+        });
+
+        ul.appendChild(li);
+      });
+
+      teamsListDiv.innerHTML = "";
+      teamsListDiv.appendChild(ul);
+    }
+
+    /*** Toggle follow ***/
+    function toggleFollow(sofaId) {
+      const idx = followedIds.indexOf(sofaId);
+      if (idx >= 0) {
+        followedIds.splice(idx, 1);
+      } else {
+        followedIds.push(sofaId);
+      }
+      saveFollowedToStorage();
+      updateFollowedCountBadge();
+      renderTeamsList();
+      renderMatches();
+    }
+
+    /*** Render matches ***/
+    function renderMatches() {
+      const followedSet = new Set(followedIds);
+
+      let filtered = liveMatches.slice();
+
+      if (showOnlyFollowed) {
+        if (!followedIds.length) {
+          matchesContainer.innerHTML = `
+            <div class="info-box">
+              <strong>Ingen live-kamper å vise.</strong>
+              <div>Velg minst ett lag i venstre kolonne, eller slå av «Bare fulgte».</div>
+            </div>
+          `;
+          matchedCountBadge.textContent = "0 kamper";
+          matchedCountBadge.classList.add("badge-neutral");
+          matchedCountBadge.classList.remove("badge-live");
+          return;
+        }
+
+        filtered = filtered.filter(m => {
+          const h = toNumberMaybe(m.home_team_id);
+          const a = toNumberMaybe(m.away_team_id);
+          return (h !== null && followedSet.has(h)) || (a !== null && followedSet.has(a));
+        });
+      }
+
+      // Sort: LIVE først, så nyeste change_ts
+      filtered.sort((a, b) => {
+        const aLive = a.status_type === "inprogress" ? 1 : 0;
+        const bLive = b.status_type === "inprogress" ? 1 : 0;
+        if (aLive !== bLive) return bLive - aLive;
+        const ac = toNumberMaybe(a.change_ts) || 0;
+        const bc = toNumberMaybe(b.change_ts) || 0;
+        return bc - ac;
+      });
+
+      if (!filtered.length) {
+        matchesContainer.innerHTML = `
+          <div class="matches-empty">
+            Ingen live-kamper akkurat nå.
+            <div>Tips: slå av «Bare fulgte» for å se alle live-kamper.</div>
+          </div>
+        `;
+        matchedCountBadge.textContent = "0 kamper";
+        matchedCountBadge.classList.add("badge-neutral");
+        matchedCountBadge.classList.remove("badge-live");
+        return;
+      }
+
+      matchedCountBadge.textContent = filtered.length + " kamper";
+      matchedCountBadge.classList.remove("badge-neutral");
+      matchedCountBadge.classList.add("badge-live");
+
+      // map sofascore_team_id -> team meta
+      const teamBySofaId = new Map();
+      for (const t of teams) {
+        const id = toNumberMaybe(t.sofascore_team_id);
+        if (id != null) {
+          teamBySofaId.set(id, t);
+        }
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "match-grid";
+
+      filtered.forEach(match => {
+        const homeId = toNumberMaybe(match.home_team_id);
+        const awayId = toNumberMaybe(match.away_team_id);
+        const homeMeta = homeId != null ? teamBySofaId.get(homeId) : null;
+        const awayMeta = awayId != null ? teamBySofaId.get(awayId) : null;
+
+        const isLive = match.status_type === "inprogress";
+        const isFinished = match.status_type === "finished" || match.status_type === "ended";
+        const startOslo = formatOsloFromEpochSeconds(match.start_ts);
+        const sets = pickSetPairs(match);
+
+        let followedSide = "none";
+        const homeFollowed = homeId != null && followedSet.has(homeId);
+        const awayFollowed = awayId != null && followedSet.has(awayId);
+        if (homeFollowed && awayFollowed) followedSide = "both";
+        else if (homeFollowed) followedSide = "home";
+        else if (awayFollowed) followedSide = "away";
+
+        const card = document.createElement("div");
+        card.className = "match-card";
+
+        const tournamentLine = escapeHTML(match.tournament_name || "");
+        const season = match.season_name ? " • " + escapeHTML(match.season_name) : "";
+        const round = match.round ? " • Runde " + escapeHTML(match.round) : "";
+
+        const statusLabel = match.status_type || "";
+        const statusDesc = match.status_desc || "";
+
+        let statusBadgeClass = "badge badge-neutral";
+        if (isLive) statusBadgeClass = "badge badge-live";
+        else if (isFinished) statusBadgeClass = "badge badge-done";
+
+        let followedLabel = "";
+        if (followedSide === "both") followedLabel = "Følger: begge";
+        else if (followedSide === "home") followedLabel = "Følger: hjemme";
+        else if (followedSide === "away") followedLabel = "Følger: borte";
+
+        const homeCountryLeague = (homeMeta ? (homeMeta.country || "") : "");
+        const homeLeague = (homeMeta ? (homeMeta.league || "") : "");
+        const awayCountryLeague = (awayMeta ? (awayMeta.country || "") : "");
+        const awayLeague = (awayMeta ? (awayMeta.league || "") : "");
+
+        card.innerHTML = `
+          <div class="match-top">
+            <div>
+              <div class="tournament-line">
+                ${tournamentLine}${season}${round}
+              </div>
+              <div class="badge-row">
+                <span class="${statusBadgeClass}">
+                  ${isLive ? "LIVE" : escapeHTML(statusLabel)}
+                  ${statusDesc ? '<span style="opacity:0.7;">•</span> ' + escapeHTML(statusDesc) : ""}
+                </span>
+                ${startOslo ? `<span class="badge badge-neutral">Start: ${escapeHTML(startOslo)}</span>` : ""}
+                ${followedLabel ? `<span class="badge badge-soon">${escapeHTML(followedLabel)}</span>` : ""}
+              </div>
+            </div>
+            <div class="score-block">
+              <div class="score-label">Sett</div>
+              <div class="score-value">${escapeHTML(match.home_sets)}-${escapeHTML(match.away_sets)}</div>
+            </div>
+          </div>
+
+          <div class="teams-row">
+            <div class="team-chip">
+              <div class="team-chip-name">${escapeHTML(match.home_team_name || "")}</div>
+              <div class="team-chip-sub">
+                ${escapeHTML(homeCountryLeague)}
+                ${homeLeague ? " • " + escapeHTML(homeLeague) : ""}
+              </div>
+            </div>
+            <div class="vs">vs</div>
+            <div class="team-chip team-chip-right">
+              <div class="team-chip-name">${escapeHTML(match.away_team_name || "")}</div>
+              <div class="team-chip-sub">
+                ${escapeHTML(awayCountryLeague)}
+                ${awayLeague ? " • " + escapeHTML(awayLeague) : ""}
+              </div>
+            </div>
+          </div>
+
+          <div class="sets-box">
+            <div class="sets-header">
+              <span>Poeng per sett</span>
+              <span>(Hjemme–Borte)</span>
+            </div>
+            <div class="sets-row">
+              ${
+                sets.length
+                  ? sets.map(s =>
+                      `<span class="set-pill" title="Sett ${s.setNo}">
+                        S${s.setNo}: ${s.home != null ? escapeHTML(s.home) : "\u2013"}-${s.away != null ? escapeHTML(s.away) : "\u2013"}
+                      </span>`
+                    ).join("")
+                  : `<span style="font-size:0.75rem;color:#6b7280;">Ingen settdetaljer ennå.</span>`
+              }
+            </div>
+          </div>
+
+          <div class="match-meta-row">
+            <div>event_id: <span class="monosmall">${escapeHTML(match.event_id)}</span></div>
+            ${match.fetched_at ? `<div>Sist hentet: ${escapeHTML(match.fetched_at)} (UTC)</div>` : ""}
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      matchesContainer.innerHTML = "";
+      matchesContainer.appendChild(grid);
+    }
+
+    /*** Auto refresh ***/
+    function setupAutoRefresh() {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
+      if (!autoRefresh) return;
+      refreshTimer = setInterval(() => {
+        fetchLive();
+      }, 15000);
+    }
+
+    /*** Event listeners ***/
+    reloadTeamsBtn.addEventListener("click", () => {
+      fetchTeams();
+    });
+
+    clearFollowedBtn.addEventListener("click", () => {
+      followedIds = [];
+      saveFollowedToStorage();
+      updateFollowedCountBadge();
+      renderTeamsList();
+      renderMatches();
+    });
+
+    showAllTeamsBtn.addEventListener("click", () => {
+      showOnlyFollowed = false;
+      showOnlyFollowedCheckbox.checked = false;
+      renderTeamsList();
+      renderMatches();
+    });
+
+    teamSearchInput.addEventListener("input", () => {
+      renderTeamsList();
+    });
+
+    refreshLiveBtn.addEventListener("click", () => {
+      fetchLive();
+    });
+
+    autoRefreshCheckbox.addEventListener("change", () => {
+      autoRefresh = autoRefreshCheckbox.checked;
+      setupAutoRefresh();
+    });
+
+    showOnlyFollowedCheckbox.addEventListener("change", () => {
+      showOnlyFollowed = showOnlyFollowedCheckbox.checked;
+      renderTeamsList();
+      renderMatches();
+    });
+
+    /*** Init ***/
+    (function init() {
+      followedIds = loadFollowedFromStorage();
+      updateFollowedCountBadge();
+
+      fetchTeams();
+      fetchLive();
+      setupAutoRefresh();
+    })();
+  })();
+</script>
+</body>
+</html>
