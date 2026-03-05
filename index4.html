@@ -20,6 +20,10 @@
 
       --pill:#f1f5f9;
       --pillActive:#dbeafe;
+
+      --favBg:#fffbeb;
+      --favBorder: rgba(245,158,11,.38);
+      --favText:#92400e;
     }
 
     *{box-sizing:border-box}
@@ -70,7 +74,7 @@
     .tabs{
       display:flex;
       gap: 8px;
-      padding: 10px 0 14px;
+      padding: 10px 0 10px;
       flex-wrap:wrap;
     }
     .tab{
@@ -85,6 +89,30 @@
       cursor:pointer;
     }
     .tab.active{
+      background:#fff;
+      color: var(--text);
+      border-color: rgba(255,255,255,.65);
+    }
+
+    /* Group pills (All tab) */
+    .groupTabs{
+      display:none;
+      gap: 8px;
+      padding: 0 0 14px;
+      flex-wrap:wrap;
+    }
+    .groupTab{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color:#fff;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor:pointer;
+    }
+    .groupTab.active{
       background:#fff;
       color: var(--text);
       border-color: rgba(255,255,255,.65);
@@ -128,6 +156,20 @@
     .dot{
       width:8px;height:8px;border-radius:999px;background: var(--live);
       box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+    }
+
+    .favPill{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      background: var(--favBg);
+      color: var(--favText);
+      border: 1px solid var(--favBorder);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
     }
 
     .empty{
@@ -224,6 +266,14 @@
       border-radius: 999px;
       white-space:nowrap;
     }
+    .compactMetaRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
     .compactTeams{
       display:grid;
       grid-template-columns: 1fr 1fr;
@@ -509,15 +559,40 @@
       color: #7f1d1d;
     }
 
-    @media (max-width: 420px){
-      .grid.compact{ grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); }
-      .logoWrap{ width: 54px; height: 54px; border-radius: 15px; }
-      .scoreCenter{ min-width: 130px; }
-      .bigScore.detailSize{ font-size: 28px; }
-      .scoreNum{ width: 3ch; }
+    /* Group section header */
+    .sectionHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin: 8px 0 0;
+      padding: 10px 4px 2px;
+      color: rgba(255,255,255,.92);
+      font-weight: 900;
+      letter-spacing: .2px;
     }
-    @media (max-width: 380px){
-      .grid.compact{ grid-template-columns: 1fr 1fr; }
+    .sectionHeader .left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+    .sectionHeader .pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.10);
+      color: rgba(255,255,255,.92);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .sectionHeader .count{
+      opacity:.9;
+      font-size: 12px;
+      font-weight: 900;
     }
 
     /* =========================
@@ -552,6 +627,17 @@
       .grid.mobileVeryDense .actions{ display:none; }
       .grid.mobileVeryDense .setsRow{ display:none; }
     }
+
+    @media (max-width: 420px){
+      .grid.compact{ grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); }
+      .logoWrap{ width: 54px; height: 54px; border-radius: 15px; }
+      .scoreCenter{ min-width: 130px; }
+      .bigScore.detailSize{ font-size: 28px; }
+      .scoreNum{ width: 3ch; }
+    }
+    @media (max-width: 380px){
+      .grid.compact{ grid-template-columns: 1fr 1fr; }
+    }
   </style>
 </head>
 
@@ -569,6 +655,13 @@
       <button id="tabAll" class="tab active" type="button">Alle (0)</button>
       <button id="tabSelected" class="tab" type="button">Valgte kamper (0)</button>
     </div>
+
+    <div id="groupTabs" class="groupTabs">
+      <button id="gAll" class="groupTab active" type="button">Alle</button>
+      <button id="gAbroad" class="groupTab" type="button">⭐ Abroad</button>
+      <button id="gMizuno" class="groupTab" type="button">🇳🇴 Mizuno</button>
+      <button id="gOther" class="groupTab" type="button">Andre</button>
+    </div>
   </header>
 
   <main>
@@ -578,6 +671,7 @@
 
   <script>
     const API_URL = "https://volleyball.ronesse.no/live";
+    const TEAMS_URL = "https://volleyball.ronesse.no/teams?limit=200&offset=0";
     const LOGO_URL = (teamId) => `https://volleyball.ronesse.no/img/teams/${teamId}.png`;
 
     const STORAGE_KEY_ORDER = "followed_matches_v2";
@@ -587,10 +681,18 @@
     let currentTab = "all";
     let wakeLock = null;
 
+    // Group filter for "All" tab
+    let currentGroupFilter = "all"; // all | abroad | mizuno | other
+
+    // Followed ordering
     let followedOrder = loadFollowedOrder();
     let followedSet = new Set(followedOrder);
 
+    // Momentum persistence
     const lastMomentumByEvent = loadMomentumCache(); // Map(eventId -> cfg)
+
+    // Watched teams from /teams
+    let watchedTeamInfoBySofaId = new Map(); // sofascore_team_id (string) -> { group_type, name, league, country }
 
     // ---------- Storage: Follow order ----------
     function loadFollowedOrder(){
@@ -679,6 +781,50 @@
       try{ localStorage.setItem(STORAGE_KEY_MOMENTUM, JSON.stringify(obj)); } catch {}
     }
 
+    // ---------- Teams / watched groups ----------
+    async function fetchTeams(){
+      const res = await fetch(TEAMS_URL, { headers: { "accept": "application/json" }});
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+
+    function buildWatchedTeamInfoMap(teams){
+      const m = new Map();
+      for (const t of teams){
+        if (!t) continue;
+        const sid = t.sofascore_team_id;
+        if (sid == null) continue;
+        const s = String(sid).trim();
+        if (!s) continue;
+        m.set(s, {
+          group_type: (t.group_type || "").toLowerCase(), // "abroad" | "mizuno" | ...
+          name: t.name || "",
+          league: t.league || "",
+          country: t.country || ""
+        });
+      }
+      return m;
+    }
+
+    function getWatchedInfoForMatch(match){
+      const h = String(match.home_team_id);
+      const a = String(match.away_team_id);
+      return watchedTeamInfoBySofaId.get(h) || watchedTeamInfoBySofaId.get(a) || null;
+    }
+
+    function getMatchGroup(match){
+      const info = getWatchedInfoForMatch(match);
+      if (!info) return "other";
+      if (info.group_type === "abroad") return "abroad";
+      if (info.group_type === "mizuno") return "mizuno";
+      return "other";
+    }
+
+    function isWatchedMatch(match){
+      return !!getWatchedInfoForMatch(match);
+    }
+
     // ---------- Volleyball helpers ----------
     function ordinalToSetNumber(statusDesc) {
       if (!statusDesc) return null;
@@ -746,12 +892,10 @@
         cfg.tagText = "3RD BREAK-POINT";
         cfg.tagClass = "breakStrong";
       }
-
       return cfg;
     }
     function getMomentum(match){
       const id = String(match.event_id);
-
       if (match.new_score === 1) {
         const m = computeMomentumFromMatch(match);
         if (m){
@@ -796,6 +940,16 @@
       document.getElementById("tabSelected").textContent = `Valgte kamper (${selectedCount})`;
     }
 
+    function updateGroupTabLabels(inprogress){
+      const abroad = inprogress.filter(m => getMatchGroup(m) === "abroad").length;
+      const mizuno = inprogress.filter(m => getMatchGroup(m) === "mizuno").length;
+      const other = inprogress.filter(m => getMatchGroup(m) === "other").length;
+      document.getElementById("gAll").textContent = `Alle (${inprogress.length})`;
+      document.getElementById("gAbroad").textContent = `⭐ Abroad (${abroad})`;
+      document.getElementById("gMizuno").textContent = `🇳🇴 Mizuno (${mizuno})`;
+      document.getElementById("gOther").textContent = `Andre (${other})`;
+    }
+
     function setActiveTab(tab){
       currentTab = tab;
       document.getElementById("tabAll").classList.toggle("active", tab === "all");
@@ -805,8 +959,20 @@
       grid.classList.toggle("compact", tab === "all");
       grid.classList.toggle("detailed", tab === "selected");
 
+      // show group tabs only on "All"
+      document.getElementById("groupTabs").style.display = (tab === "all") ? "flex" : "none";
+
       render();
       ensureWakeLock();
+    }
+
+    function setActiveGroup(group){
+      currentGroupFilter = group;
+      document.getElementById("gAll").classList.toggle("active", group === "all");
+      document.getElementById("gAbroad").classList.toggle("active", group === "abroad");
+      document.getElementById("gMizuno").classList.toggle("active", group === "mizuno");
+      document.getElementById("gOther").classList.toggle("active", group === "other");
+      render();
     }
 
     // ---------- Wake Lock ----------
@@ -880,6 +1046,7 @@
     function renderCompactCard(match){
       const currentSet = getCurrentSetNumber(match);
       const points = getPointsForSet(match, currentSet);
+      const watchedInfo = getWatchedInfoForMatch(match);
 
       const card = document.createElement("div");
       card.className = "card compactCard";
@@ -898,6 +1065,25 @@
 
       top.appendChild(league);
       top.appendChild(status);
+
+      const metaRow = document.createElement("div");
+      metaRow.className = "compactMetaRow";
+
+      const left = document.createElement("div");
+      left.style.display = "flex";
+      left.style.alignItems = "center";
+      left.style.gap = "8px";
+      left.style.minWidth = "0";
+
+      if (watchedInfo){
+        const pill = document.createElement("div");
+        pill.className = "favPill";
+        const label = watchedInfo.group_type === "abroad" ? "⭐ Abroad" : (watchedInfo.group_type === "mizuno" ? "🇳🇴 Mizuno" : "⭐ Favoritt");
+        pill.textContent = label;
+        left.appendChild(pill);
+      }
+
+      metaRow.appendChild(left);
 
       const teams = document.createElement("div");
       teams.className = "compactTeams";
@@ -964,6 +1150,7 @@
       actions.appendChild(btn);
 
       card.appendChild(top);
+      card.appendChild(metaRow);
       card.appendChild(teams);
       card.appendChild(scoreBox);
       card.appendChild(meta);
@@ -1106,6 +1293,7 @@
       const currentSet = getCurrentSetNumber(match);
       const points = getPointsForSet(match, currentSet);
       const momentum = getMomentum(match);
+      const watchedInfo = getWatchedInfoForMatch(match);
 
       const card = document.createElement("div");
       card.className = "card";
@@ -1128,12 +1316,27 @@
       title.appendChild(t);
       title.appendChild(s);
 
+      const right = document.createElement("div");
+      right.style.display = "flex";
+      right.style.flexDirection = "column";
+      right.style.alignItems = "flex-end";
+      right.style.gap = "6px";
+
       const badge = document.createElement("div");
       badge.className = "badge";
       badge.innerHTML = `<span class="dot"></span> LIVE · ${match.status_desc ?? ""}`;
+      right.appendChild(badge);
+
+      if (watchedInfo){
+        const pill = document.createElement("div");
+        pill.className = "favPill";
+        const label = watchedInfo.group_type === "abroad" ? "⭐ Abroad" : (watchedInfo.group_type === "mizuno" ? "🇳🇴 Mizuno" : "⭐ Favoritt");
+        pill.textContent = label;
+        right.appendChild(pill);
+      }
 
       top.appendChild(title);
-      top.appendChild(badge);
+      top.appendChild(right);
 
       const body = document.createElement("div");
       body.className = "bodyRow";
@@ -1286,12 +1489,31 @@
       return card;
     }
 
+    function renderSectionHeader(title, count){
+      const header = document.createElement("div");
+      header.className = "sectionHeader";
+      const left = document.createElement("div");
+      left.className = "left";
+      const pill = document.createElement("div");
+      pill.className = "pill";
+      pill.textContent = title;
+      const c = document.createElement("div");
+      c.className = "count";
+      c.textContent = `${count}`;
+      left.appendChild(pill);
+      header.appendChild(left);
+      header.appendChild(c);
+      return header;
+    }
+
     function render(){
       const grid = document.getElementById("grid");
       const empty = document.getElementById("empty");
       grid.innerHTML = "";
 
       const inprogress = liveMatches.filter(m => m.status_type === "inprogress");
+
+      updateGroupTabLabels(inprogress);
 
       if (currentTab === "all"){
         grid.classList.add("compact");
@@ -1305,30 +1527,70 @@
         }
         empty.style.display = "none";
 
-        inprogress
-          .slice()
-          .sort((a,b) => (b.change_ts ?? 0) - (a.change_ts ?? 0))
-          .forEach(m => grid.appendChild(renderCompactCard(m)));
-      } else {
-        grid.classList.add("detailed");
-        grid.classList.remove("compact");
+        // favorite sorting first + change_ts
+        let list = inprogress.slice().sort((a,b) => {
+          const aw = isWatchedMatch(a) ? 1 : 0;
+          const bw = isWatchedMatch(b) ? 1 : 0;
+          if (bw !== aw) return bw - aw;
+          return (b.change_ts ?? 0) - (a.change_ts ?? 0);
+        });
 
-        const matchById = new Map(inprogress.map(m => [String(m.event_id), m]));
-        const orderedLiveSelected = followedOrder.map(id => matchById.get(String(id))).filter(Boolean);
+        // group filter
+        if (currentGroupFilter !== "all") {
+          list = list.filter(m => getMatchGroup(m) === currentGroupFilter);
+        }
 
-        applyMobileDensity(orderedLiveSelected.length);
+        // If group filter is "all", render grouped sections (abroad, mizuno, other) for clarity
+        if (currentGroupFilter === "all") {
+          const abroad = list.filter(m => getMatchGroup(m) === "abroad");
+          const mizuno = list.filter(m => getMatchGroup(m) === "mizuno");
+          const other = list.filter(m => getMatchGroup(m) === "other");
 
-        if (orderedLiveSelected.length === 0){
-          empty.style.display = "block";
-          empty.textContent = "Du har ingen valgte livekamper. Gå til «Alle» og trykk Følg.";
+          if (abroad.length){
+            grid.appendChild(renderSectionHeader("⭐ Abroad", abroad.length));
+            abroad.forEach(m => grid.appendChild(renderCompactCard(m)));
+          }
+          if (mizuno.length){
+            grid.appendChild(renderSectionHeader("🇳🇴 Mizuno", mizuno.length));
+            mizuno.forEach(m => grid.appendChild(renderCompactCard(m)));
+          }
+          if (other.length){
+            grid.appendChild(renderSectionHeader("Andre", other.length));
+            other.forEach(m => grid.appendChild(renderCompactCard(m)));
+          }
           return;
         }
-        empty.style.display = "none";
 
-        orderedLiveSelected.forEach(m => grid.appendChild(renderDetailedCard(m)));
+        // otherwise render simple filtered list
+        if (list.length === 0){
+          empty.style.display = "block";
+          empty.textContent = "Ingen kamper i denne gruppen akkurat nå.";
+          return;
+        }
+        list.forEach(m => grid.appendChild(renderCompactCard(m)));
+        return;
       }
+
+      // Selected tab
+      grid.classList.add("detailed");
+      grid.classList.remove("compact");
+
+      const matchById = new Map(inprogress.map(m => [String(m.event_id), m]));
+      const orderedLiveSelected = followedOrder.map(id => matchById.get(String(id))).filter(Boolean);
+
+      applyMobileDensity(orderedLiveSelected.length);
+
+      if (orderedLiveSelected.length === 0){
+        empty.style.display = "block";
+        empty.textContent = "Du har ingen valgte livekamper. Gå til «Alle» og trykk Følg.";
+        return;
+      }
+      empty.style.display = "none";
+
+      orderedLiveSelected.forEach(m => grid.appendChild(renderDetailedCard(m)));
     }
 
+    // ---------- Data ----------
     async function fetchLive() {
       const res = await fetch(API_URL, { headers: { "accept": "application/json" }});
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1348,9 +1610,49 @@
       if (changed) saveMomentumCache();
     }
 
+    // Cache teams in-memory + in localStorage to avoid frequent fetch
+    const TEAMS_CACHE_KEY = "watched_teams_cache_v1";
+    const TEAMS_CACHE_TS_KEY = "watched_teams_cache_ts_v1";
+    const TEAMS_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+    function loadTeamsCache(){
+      try{
+        const raw = localStorage.getItem(TEAMS_CACHE_KEY);
+        const ts = Number(localStorage.getItem(TEAMS_CACHE_TS_KEY) || "0");
+        if (!raw || !ts) return null;
+        if ((Date.now() - ts) > TEAMS_TTL_MS) return null;
+        const data = JSON.parse(raw);
+        if (!Array.isArray(data)) return null;
+        return data;
+      }catch{
+        return null;
+      }
+    }
+    function saveTeamsCache(arr){
+      try{
+        localStorage.setItem(TEAMS_CACHE_KEY, JSON.stringify(arr));
+        localStorage.setItem(TEAMS_CACHE_TS_KEY, String(Date.now()));
+      }catch{}
+    }
+
     async function refresh() {
       try {
+        // fetch live
         liveMatches = await fetchLive();
+
+        // fetch watched teams (best effort + cache)
+        try{
+          let teamList = loadTeamsCache();
+          if (!teamList){
+            teamList = await fetchTeams();
+            saveTeamsCache(teamList);
+          }
+          watchedTeamInfoBySofaId = buildWatchedTeamInfoMap(teamList);
+        }catch{
+          // keep previous map if fetch fails
+          watchedTeamInfoBySofaId = watchedTeamInfoBySofaId || new Map();
+        }
+
         cleanupMomentumCache();
         updateTabLabels();
         render();
@@ -1368,9 +1670,17 @@
       }
     }
 
+    // ---------- Events ----------
     document.getElementById("tabAll").addEventListener("click", () => setActiveTab("all"));
     document.getElementById("tabSelected").addEventListener("click", () => setActiveTab("selected"));
 
+    document.getElementById("gAll").addEventListener("click", () => setActiveGroup("all"));
+    document.getElementById("gAbroad").addEventListener("click", () => setActiveGroup("abroad"));
+    document.getElementById("gMizuno").addEventListener("click", () => setActiveGroup("mizuno"));
+    document.getElementById("gOther").addEventListener("click", () => setActiveGroup("other"));
+
+    // Init + polling
+    setActiveTab("all");
     refresh();
     setInterval(refresh, 10000);
   </script>
