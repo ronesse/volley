@@ -12,8 +12,8 @@
       --text:#0f172a;
       --muted:#64748b;
       --line:rgba(15,23,42,.08);
-      --shadow:0 8px 22px rgba(2,6,23,.08);
-      --radius:16px;
+      --shadow:0 7px 18px rgba(2,6,23,.08);
+      --radius:15px;
 
       --live:#16a34a;
       --liveBg:#ecfdf5;
@@ -28,7 +28,7 @@
     body{
       margin:0;
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
-      background:linear-gradient(180deg,var(--bgTop) 0%,var(--bgTop) 102px,var(--bg) 102px,var(--bg) 100%);
+      background:linear-gradient(180deg,var(--bgTop) 0%,var(--bgTop) 98px,var(--bg) 98px,var(--bg) 100%);
       color:var(--text);
       -webkit-tap-highlight-color:transparent;
     }
@@ -36,7 +36,7 @@
     header{
       max-width:860px;
       margin:0 auto;
-      padding:12px 10px 10px;
+      padding:11px 9px 9px;
       color:#fff;
     }
     .headRow{
@@ -47,18 +47,18 @@
     }
     h1{
       margin:0;
-      font-size:17px;
+      font-size:16px;
       font-weight:900;
-      letter-spacing:.2px;
+      letter-spacing:.18px;
     }
     .sub{
       margin:3px 0 0;
-      font-size:11px;
+      font-size:10px;
       line-height:1.2;
       color:rgba(255,255,255,.78);
     }
     .lastUpdated{
-      font-size:11px;
+      font-size:10px;
       white-space:nowrap;
       color:rgba(255,255,255,.75);
       text-align:right;
@@ -67,17 +67,17 @@
     .tabs{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:8px;
-      margin-top:10px;
+      gap:7px;
+      margin-top:9px;
     }
     .tab{
       appearance:none;
       border:1px solid rgba(255,255,255,.18);
       background:rgba(255,255,255,.08);
       color:#fff;
-      padding:10px 12px;
+      padding:9px 10px;
       border-radius:999px;
-      font-size:12px;
+      font-size:11px;
       font-weight:900;
       cursor:pointer;
       white-space:nowrap;
@@ -91,12 +91,12 @@
     main{
       max-width:860px;
       margin:0 auto;
-      padding:10px 10px 18px;
+      padding:9px 9px 16px;
     }
 
     .grid{
       display:grid;
-      gap:8px;
+      gap:7px;
     }
 
     .grid.all{
@@ -123,13 +123,13 @@
     }
 
     .empty{
-      padding:18px;
-      border-radius:16px;
+      padding:16px;
+      border-radius:15px;
       text-align:center;
-      background:rgba(255,255,255,.8);
+      background:rgba(255,255,255,.82);
       border:1px dashed rgba(15,23,42,.18);
       color:rgba(15,23,42,.78);
-      font-size:13px;
+      font-size:12px;
     }
 
     .btn{
@@ -137,12 +137,12 @@
       border:1px solid rgba(15,23,42,.12);
       background:#fff;
       color:var(--text);
-      padding:7px 10px;
+      padding:6px 9px;
       border-radius:999px;
-      font-size:11px;
+      font-size:10px;
       font-weight:900;
       cursor:pointer;
-      min-height:32px;
+      min-height:30px;
     }
     .btn.primary{
       background:#eff6ff;
@@ -156,7 +156,7 @@
     .btn:disabled{opacity:.65;cursor:default}
 
     .logoWrap{
-      border-radius:12px;
+      border-radius:11px;
       border:1px solid rgba(15,23,42,.1);
       background:#fff;
       display:grid;
@@ -169,14 +169,14 @@
       height:100%;
       object-fit:contain;
       display:block;
-      padding:5px;
+      padding:4px;
     }
     .fallbackBox{
       width:100%;
       height:100%;
       display:grid;
       place-items:center;
-      font-size:12px;
+      font-size:11px;
       font-weight:900;
       color:rgba(15,23,42,.55);
       background:#f8fafc;
@@ -185,20 +185,20 @@
     .badge{
       display:inline-flex;
       align-items:center;
-      gap:6px;
+      gap:5px;
       background:var(--liveBg);
       color:#14532d;
       border:1px solid var(--liveBorder);
-      padding:4px 8px;
+      padding:4px 7px;
       border-radius:999px;
-      font-size:10px;
+      font-size:9px;
       font-weight:900;
       line-height:1;
       white-space:nowrap;
     }
     .dot{
-      width:7px;
-      height:7px;
+      width:6px;
+      height:6px;
       border-radius:999px;
       background:var(--live);
       box-shadow:0 0 0 3px rgba(22,163,74,.12);
@@ -206,86 +206,90 @@
     }
 
     /* ===== ALL / kompakte kort ===== */
-    .compactCard{ padding:8px; }
+    .compactCard{ padding:7px; }
     .compactTop{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:6px;
-      margin-bottom:7px;
+      gap:5px;
+      margin-bottom:6px;
     }
     .compactLeague{
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
-      font-size:10px;
+      font-size:9px;
       font-weight:800;
       color:var(--muted);
     }
     .compactStatus{
       flex:0 0 auto;
-      font-size:9px;
+      font-size:8px;
       font-weight:900;
       color:rgba(15,23,42,.75);
       background:#f8fafc;
       border:1px solid rgba(15,23,42,.08);
-      padding:3px 6px;
+      padding:3px 5px;
       border-radius:999px;
       white-space:nowrap;
     }
     .compactTeams{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:6px;
+      gap:5px;
       align-items:start;
     }
     .miniTeam{
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:5px;
+      gap:4px;
       min-width:0;
     }
     .miniName{
-      font-size:10px;
+      font-size:9px;
       font-weight:900;
-      line-height:1.08;
+      line-height:1.05;
       text-align:center;
-      min-height:2.2em;
+      min-height:2.1em;
       display:-webkit-box;
       -webkit-box-orient:vertical;
       -webkit-line-clamp:2;
       overflow:hidden;
     }
+    .compactCard .logoWrap{
+      width:33px;
+      height:33px;
+    }
     .compactScoreBox{
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-      margin-top:7px;
-      padding:6px 8px;
-      border-radius:12px;
+      gap:7px;
+      margin-top:6px;
+      padding:5px 7px;
+      border-radius:11px;
       background:#f8fafc;
       border:1px solid rgba(15,23,42,.08);
     }
     .bigScore{
       font-weight:950;
-      letter-spacing:.15px;
+      letter-spacing:.12px;
       font-variant-numeric:tabular-nums;
     }
-    .bigScore.compactSize{ font-size:18px; }
+    .bigScore.compactSize{ font-size:17px; }
     .bigScore.detailSize{ font-size:22px; }
     .smallMeta{
-      margin-top:6px;
-      font-size:9px;
+      margin-top:5px;
+      font-size:8px;
       font-weight:850;
       color:var(--muted);
       text-align:center;
-      line-height:1.2;
+      line-height:1.15;
     }
     .compactActions{
-      margin-top:7px;
+      margin-top:6px;
     }
 
     /* ===== Selected / adaptive kort ===== */
@@ -297,8 +301,8 @@
       display:flex;
       align-items:flex-start;
       justify-content:space-between;
-      gap:6px;
-      margin-bottom:7px;
+      gap:5px;
+      margin-bottom:6px;
     }
     .selectedTitle{
       min-width:0;
@@ -306,16 +310,16 @@
     }
     .selectedTournament{
       font-weight:900;
-      line-height:1.12;
+      line-height:1.08;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
     .selectedMeta{
-      margin-top:2px;
+      margin-top:1px;
       color:var(--muted);
       font-weight:800;
-      line-height:1.15;
+      line-height:1.1;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
@@ -325,20 +329,20 @@
       display:grid;
       grid-template-columns:1fr auto 1fr;
       align-items:center;
-      gap:6px;
+      gap:5px;
     }
     .teamV{
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:5px;
+      gap:4px;
       min-width:0;
     }
     .teamVName{
       font-weight:900;
-      line-height:1.08;
+      line-height:1.05;
       text-align:center;
-      min-height:2.2em;
+      min-height:2em;
       display:-webkit-box;
       -webkit-box-orient:vertical;
       -webkit-line-clamp:2;
@@ -349,20 +353,20 @@
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:3px;
+      gap:2px;
       min-width:0;
     }
     .scoreLine{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      gap:6px;
+      gap:5px;
       font-variant-numeric:tabular-nums;
     }
     .scorePiece{
       display:inline-flex;
       align-items:center;
-      gap:3px;
+      gap:2px;
     }
     .scoreNum{
       display:inline-block;
@@ -383,18 +387,18 @@
       color:var(--muted);
       text-align:center;
       font-weight:800;
-      line-height:1.1;
+      line-height:1.05;
     }
     .serveLine{
       text-transform:uppercase;
-      letter-spacing:.25px;
+      letter-spacing:.2px;
     }
 
     .tag{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      padding:3px 7px;
+      padding:2px 6px;
       border-radius:999px;
       border:1px solid rgba(2,132,199,.18);
       background:#eff6ff;
@@ -424,14 +428,14 @@
     .actionsRow{
       display:grid;
       grid-template-columns:1fr auto;
-      gap:6px;
+      gap:5px;
       align-items:center;
-      margin-top:7px;
+      margin-top:6px;
     }
     .dragHandle{
       display:inline-flex;
       align-items:center;
-      gap:6px;
+      gap:4px;
       min-width:0;
       cursor:grab;
       touch-action:none;
@@ -457,17 +461,17 @@
 
     .setsRow{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(40px,1fr));
-      gap:4px;
-      margin-top:7px;
-      padding-top:7px;
+      grid-template-columns:repeat(auto-fit,minmax(36px,1fr));
+      gap:3px;
+      margin-top:6px;
+      padding-top:6px;
       border-top:1px solid rgba(15,23,42,.06);
     }
     .setPill{
       min-width:0;
       background:var(--pill);
       border:1px solid rgba(15,23,42,.10);
-      border-radius:10px;
+      border-radius:8px;
       text-align:center;
     }
     .setPill.active{
@@ -482,15 +486,16 @@
     }
     .setScore{
       font-weight:950;
-      line-height:1.1;
+      line-height:1.05;
       font-variant-numeric:tabular-nums;
     }
 
     .scoreIcons{
       display:inline-flex;
       align-items:center;
-      gap:2px;
+      gap:1px;
       line-height:1;
+      font-size:10px;
     }
     @keyframes blinkPulse{0%,49%{opacity:1}50%,100%{opacity:.25}}
     .iconBlink{animation:blinkPulse 1s infinite}
@@ -502,96 +507,108 @@
     }
     .dropPlaceholder{
       border:2px dashed rgba(37,99,235,.42);
-      border-radius:16px;
+      border-radius:15px;
       background:rgba(37,99,235,.05);
       box-shadow:none;
     }
 
     /* ===== Density: 1 kamp ===== */
-    .grid.selected.selected-1 .selectedCard{ padding:14px; }
-    .grid.selected.selected-1 .logoWrap{ width:56px; height:56px; }
-    .grid.selected.selected-1 .selectedTournament{ font-size:14px; }
-    .grid.selected.selected-1 .selectedMeta{ font-size:11px; }
-    .grid.selected.selected-1 .teamVName{ font-size:13px; }
-    .grid.selected.selected-1 .bigScore.detailSize{ font-size:30px; }
+    .grid.selected.selected-1 .selectedCard{ padding:13px; }
+    .grid.selected.selected-1 .logoWrap{ width:54px; height:54px; }
+    .grid.selected.selected-1 .selectedTournament{ font-size:13px; }
+    .grid.selected.selected-1 .selectedMeta{ font-size:10px; }
+    .grid.selected.selected-1 .teamVName{ font-size:12px; }
+    .grid.selected.selected-1 .bigScore.detailSize{ font-size:28px; }
     .grid.selected.selected-1 .metaLine,
-    .grid.selected.selected-1 .serveLine{ font-size:11px; }
-    .grid.selected.selected-1 .tag{ font-size:10px; padding:5px 10px; }
-    .grid.selected.selected-1 .dragHandle{ font-size:11px; }
-    .grid.selected.selected-1 .setLabel{ font-size:9px; }
-    .grid.selected.selected-1 .setScore{ font-size:12px; }
-    .grid.selected.selected-1 .setPill{ padding:6px 5px; }
-    .grid.selected.selected-1 .badge{ font-size:11px; }
+    .grid.selected.selected-1 .serveLine{ font-size:10px; }
+    .grid.selected.selected-1 .tag{ font-size:9px; padding:4px 9px; }
+    .grid.selected.selected-1 .dragHandle{ font-size:10px; }
+    .grid.selected.selected-1 .setLabel{ font-size:8px; }
+    .grid.selected.selected-1 .setScore{ font-size:11px; }
+    .grid.selected.selected-1 .setPill{ padding:5px 4px; }
+    .grid.selected.selected-1 .badge{ font-size:10px; }
+    .grid.selected.selected-1 .scoreIcons{ font-size:11px; }
 
     /* ===== Density: 2 kamper ===== */
-    .grid.selected.selected-2 .selectedCard{ padding:12px; }
-    .grid.selected.selected-2 .logoWrap{ width:48px; height:48px; }
-    .grid.selected.selected-2 .selectedTournament{ font-size:12px; }
-    .grid.selected.selected-2 .selectedMeta{ font-size:10px; }
-    .grid.selected.selected-2 .teamVName{ font-size:12px; }
-    .grid.selected.selected-2 .bigScore.detailSize{ font-size:26px; }
+    .grid.selected.selected-2 .selectedCard{ padding:11px; }
+    .grid.selected.selected-2 .logoWrap{ width:46px; height:46px; }
+    .grid.selected.selected-2 .selectedTournament{ font-size:11px; }
+    .grid.selected.selected-2 .selectedMeta{ font-size:9px; }
+    .grid.selected.selected-2 .teamVName{ font-size:11px; }
+    .grid.selected.selected-2 .bigScore.detailSize{ font-size:24px; }
     .grid.selected.selected-2 .metaLine,
-    .grid.selected.selected-2 .serveLine{ font-size:10px; }
-    .grid.selected.selected-2 .tag{ font-size:9px; padding:4px 8px; }
-    .grid.selected.selected-2 .dragHandle{ font-size:10px; }
+    .grid.selected.selected-2 .serveLine{ font-size:9px; }
+    .grid.selected.selected-2 .tag{ font-size:8px; padding:4px 7px; }
+    .grid.selected.selected-2 .dragHandle{ font-size:9px; }
     .grid.selected.selected-2 .setLabel{ font-size:8px; }
-    .grid.selected.selected-2 .setScore{ font-size:11px; }
-    .grid.selected.selected-2 .setPill{ padding:5px 4px; }
+    .grid.selected.selected-2 .setScore{ font-size:10px; }
+    .grid.selected.selected-2 .setPill{ padding:4px 3px; }
+    .grid.selected.selected-2 .scoreIcons{ font-size:10px; }
 
     /* ===== Density: 3–4 kamper ===== */
-    .grid.selected.selected-4 .selectedCard{ padding:9px; }
-    .grid.selected.selected-4 .logoWrap{ width:38px; height:38px; }
-    .grid.selected.selected-4 .selectedTournament{ font-size:10px; }
-    .grid.selected.selected-4 .selectedMeta{ font-size:9px; }
-    .grid.selected.selected-4 .teamVName{ font-size:10px; }
-    .grid.selected.selected-4 .bigScore.detailSize{ font-size:20px; }
+    .grid.selected.selected-4 .selectedCard{ padding:8px; }
+    .grid.selected.selected-4 .logoWrap{ width:36px; height:36px; }
+    .grid.selected.selected-4 .selectedTournament{ font-size:9px; }
+    .grid.selected.selected-4 .selectedMeta{ font-size:8px; }
+    .grid.selected.selected-4 .teamVName{ font-size:9px; }
+    .grid.selected.selected-4 .bigScore.detailSize{ font-size:18px; }
     .grid.selected.selected-4 .metaLine,
-    .grid.selected.selected-4 .serveLine{ font-size:9px; }
-    .grid.selected.selected-4 .tag{ font-size:8px; padding:3px 7px; }
-    .grid.selected.selected-4 .dragHandle{ font-size:9px; }
-    .grid.selected.selected-4 .setLabel{ font-size:8px; }
-    .grid.selected.selected-4 .setScore{ font-size:10px; }
-    .grid.selected.selected-4 .setPill{ padding:4px; }
+    .grid.selected.selected-4 .serveLine{ font-size:8px; }
+    .grid.selected.selected-4 .tag{ font-size:7px; padding:2px 6px; }
+    .grid.selected.selected-4 .dragHandle{ font-size:8px; }
+    .grid.selected.selected-4 .setLabel{ font-size:7px; }
+    .grid.selected.selected-4 .setScore{ font-size:9px; }
+    .grid.selected.selected-4 .setPill{ padding:3px; }
+    .grid.selected.selected-4 .scoreIcons{ font-size:9px; }
 
     /* ===== Density: 5–6 kamper ===== */
-    .grid.selected.selected-6{ gap:7px; }
-    .grid.selected.selected-6 .selectedCard{ padding:8px; }
-    .grid.selected.selected-6 .logoWrap{ width:34px; height:34px; }
-    .grid.selected.selected-6 .selectedTournament{ font-size:10px; }
-    .grid.selected.selected-6 .selectedMeta{ font-size:8px; }
-    .grid.selected.selected-6 .teamVName{ font-size:10px; }
-    .grid.selected.selected-6 .bigScore.detailSize{ font-size:18px; }
+    .grid.selected.selected-6{ gap:6px; }
+    .grid.selected.selected-6 .selectedCard{ padding:7px; }
+    .grid.selected.selected-6 .selectedTop{ margin-bottom:5px; gap:5px; }
+    .grid.selected.selected-6 .teamsRow{ gap:4px; }
+    .grid.selected.selected-6 .teamV{ gap:3px; }
+    .grid.selected.selected-6 .logoWrap{ width:30px; height:30px; border-radius:10px; }
+    .grid.selected.selected-6 .selectedTournament{ font-size:9px; }
+    .grid.selected.selected-6 .selectedMeta{ font-size:7px; }
+    .grid.selected.selected-6 .teamVName{ font-size:9px; min-height:2em; }
+    .grid.selected.selected-6 .bigScore.detailSize{ font-size:16px; }
     .grid.selected.selected-6 .metaLine,
-    .grid.selected.selected-6 .serveLine{ font-size:8px; }
-    .grid.selected.selected-6 .tag{ font-size:8px; padding:3px 6px; }
-    .grid.selected.selected-6 .dragHandle{ font-size:9px; }
-    .grid.selected.selected-6 .setLabel{ font-size:7px; }
-    .grid.selected.selected-6 .setScore{ font-size:9px; }
-    .grid.selected.selected-6 .setPill{ padding:4px 3px; }
-    .grid.selected.selected-6 .scoreIcons{ font-size:11px; }
+    .grid.selected.selected-6 .serveLine{ font-size:7px; }
+    .grid.selected.selected-6 .tag{ font-size:7px; padding:2px 5px; }
+    .grid.selected.selected-6 .actionsRow{ gap:5px; margin-top:5px; }
+    .grid.selected.selected-6 .dragHandle{ font-size:8px; gap:4px; }
+    .grid.selected.selected-6 .setLabel{ font-size:6px; }
+    .grid.selected.selected-6 .setScore{ font-size:8px; }
+    .grid.selected.selected-6 .setPill{ padding:3px 2px; border-radius:8px; }
+    .grid.selected.selected-6 .setsRow{ gap:3px; margin-top:5px; padding-top:5px; }
+    .grid.selected.selected-6 .scoreIcons{ font-size:8px; gap:1px; }
 
     /* ===== Density: 7+ kamper ===== */
-    .grid.selected.selected-8plus{ gap:6px; }
-    .grid.selected.selected-8plus .selectedCard{ padding:7px; }
-    .grid.selected.selected-8plus .logoWrap{ width:32px; height:32px; border-radius:10px; }
-    .grid.selected.selected-8plus .selectedTournament{ font-size:9px; }
-    .grid.selected.selected-8plus .selectedMeta{ font-size:8px; }
-    .grid.selected.selected-8plus .teamVName{ font-size:9px; }
-    .grid.selected.selected-8plus .bigScore.detailSize{ font-size:17px; }
+    .grid.selected.selected-8plus{ gap:5px; }
+    .grid.selected.selected-8plus .selectedCard{ padding:6px; }
+    .grid.selected.selected-8plus .selectedTop{ margin-bottom:4px; gap:4px; }
+    .grid.selected.selected-8plus .teamsRow{ gap:4px; }
+    .grid.selected.selected-8plus .teamV{ gap:3px; }
+    .grid.selected.selected-8plus .logoWrap{ width:28px; height:28px; border-radius:9px; }
+    .grid.selected.selected-8plus .selectedTournament{ font-size:8px; }
+    .grid.selected.selected-8plus .selectedMeta{ font-size:7px; }
+    .grid.selected.selected-8plus .teamVName{ font-size:8px; min-height:2em; }
+    .grid.selected.selected-8plus .bigScore.detailSize{ font-size:15px; }
     .grid.selected.selected-8plus .metaLine,
-    .grid.selected.selected-8plus .serveLine{ font-size:8px; }
-    .grid.selected.selected-8plus .tag{ font-size:7px; padding:3px 6px; }
-    .grid.selected.selected-8plus .dragHandle{ font-size:8px; }
-    .grid.selected.selected-8plus .setLabel{ font-size:7px; }
-    .grid.selected.selected-8plus .setScore{ font-size:8px; }
-    .grid.selected.selected-8plus .setPill{ padding:3px; }
-    .grid.selected.selected-8plus .scoreIcons{ font-size:10px; }
+    .grid.selected.selected-8plus .serveLine{ font-size:7px; }
+    .grid.selected.selected-8plus .tag{ font-size:6px; padding:2px 5px; }
+    .grid.selected.selected-8plus .actionsRow{ gap:4px; margin-top:4px; }
+    .grid.selected.selected-8plus .dragHandle{ font-size:7px; gap:4px; }
+    .grid.selected.selected-8plus .setLabel{ font-size:6px; }
+    .grid.selected.selected-8plus .setScore{ font-size:7px; }
+    .grid.selected.selected-8plus .setPill{ padding:2px; border-radius:8px; }
+    .grid.selected.selected-8plus .setsRow{ gap:3px; margin-top:4px; padding-top:4px; }
+    .grid.selected.selected-8plus .scoreIcons{ font-size:7px; gap:1px; }
 
     @media (min-width: 560px){
       .grid.all{
         grid-template-columns:repeat(3,minmax(0,1fr));
       }
-
       .grid.selected.selected-2{
         grid-template-columns:repeat(2,minmax(0,1fr));
       }
@@ -605,9 +622,10 @@
     @media (max-width: 359px){
       header{padding-inline:8px}
       main{padding-inline:8px}
-      .grid{gap:6px}
-      .tab{padding:9px 8px;font-size:11px}
-      .compactCard{padding:7px}
+      .grid{gap:5px}
+      .tab{padding:8px 7px;font-size:10px}
+      .compactCard{padding:6px}
+      .compactCard .logoWrap{width:30px;height:30px}
     }
   </style>
 </head>
@@ -616,7 +634,7 @@
     <div class="headRow">
       <div>
         <h1>Live volleyball</h1>
-        <p class="sub">Adaptiv mobilvisning – store kort ved få kamper, kompakt ved mange</p>
+        <p class="sub">Adaptiv mobilvisning – større ved få kamper, strammere ved mange</p>
       </div>
       <div class="lastUpdated" id="lastUpdated"></div>
     </div>
@@ -973,7 +991,7 @@
 
         const label = document.createElement("div");
         label.className = "setLabel";
-        label.textContent = `${i}. sett`;
+        label.textContent = `${i}.`;
 
         const score = document.createElement("div");
         score.className = "setScore";
@@ -1053,7 +1071,7 @@
 
       const meta = document.createElement("div");
       meta.className = "smallMeta";
-      meta.textContent = `${match.home_sets ?? 0}-${match.away_sets ?? 0} sett · ${currentSet}. sett`;
+      meta.textContent = `${match.home_sets ?? 0}-${match.away_sets ?? 0} · ${currentSet}. sett`;
 
       const actions = document.createElement("div");
       actions.className = "compactActions";
@@ -1143,7 +1161,7 @@
         startY = e.clientY;
 
         const rect = cardEl.getBoundingClientRect();
-        placeholderHeight = Math.max(70, Math.round(rect.height));
+        placeholderHeight = Math.max(62, Math.round(rect.height));
 
         pressTimer = setTimeout(() => {
           dragActive = true;
@@ -1336,7 +1354,7 @@
 
       const meta = document.createElement("div");
       meta.className = "metaLine";
-      meta.textContent = `${match.home_sets ?? 0}-${match.away_sets ?? 0} sett · ${currentSet}. sett`;
+      meta.textContent = `${match.home_sets ?? 0}-${match.away_sets ?? 0} · ${currentSet}. sett`;
 
       let serveTeam = "UKJENT";
       if (momentum){
@@ -1382,7 +1400,7 @@
       grip.innerHTML = "<span></span><span></span><span></span><span></span><span></span><span></span>";
 
       const txt = document.createElement("span");
-      txt.textContent = "Hold og dra";
+      txt.textContent = "Dra";
 
       handle.appendChild(grip);
       handle.appendChild(txt);
