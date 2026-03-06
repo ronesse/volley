@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Live volleyball – mobil</title>
+  <style>
+    :root{
+      --bgTop:#0b1020;
+      --bg:#eef2f7;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.08);
+      --shadow:0 6px 18px rgba(2,6,23,.08);
+      --radius:14px;
+
+      --live:#16a34a;
+      --liveBg:#ecfdf5;
+      --liveBorder:rgba(22,163,74,.22);
+
+      --pill:#f8fafc;
+      --pillActive:#e0ecff;
+      --blue:#2563eb;
+      --danger:#dc2626;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg,var(--bgTop) 0%,var(--bgTop) 96px,var(--bg) 96px,var(--bg) 100%);
+      color:var(--text);
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    header{
+      max-width:760px;
+      margin:0 auto;
+      padding:12px 10px 10px;
+      color:#fff;
+    }
+    .headRow{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+    }
+    h1{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:.15px;
+    }
+    .sub{
+      margin:3px 0 0;
+      font-size:11px;
+      color:rgba(255,255,255,.76);
+      line-height:1.2;
+    }
+    .lastUpdated{
+      font-size:11px;
+      color:rgba(255,255,255,.72);
+      text-align:right;
+      white-space:nowrap;
+    }
+
+    .tabs{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-top:10px;
+    }
+    .tab{
+      appearance:none;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      padding:10px 12px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .tab.active{
+      background:#fff;
+      color:var(--text);
+      border-color:rgba(255,255,255,.55);
+    }
+
+    main{
+      max-width:760px;
+      margin:0 auto;
+      padding:10px 10px 16px;
+    }
+
+    .grid{
+      display:grid;
+      gap:8px;
+    }
+    .grid.all{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .grid.selected{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-width:0;
+    }
+
+    .empty{
+      padding:16px;
+      text-align:center;
+      color:rgba(15,23,42,.75);
+      border:1px dashed rgba(15,23,42,.18);
+      background:rgba(255,255,255,.78);
+      border-radius:16px;
+      font-size:13px;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid rgba(15,23,42,.12);
+      background:#fff;
+      color:var(--text);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      cursor:pointer;
+      min-height:32px;
+    }
+    .btn.primary{
+      background:#eff6ff;
+      border-color:rgba(37,99,235,.24);
+    }
+    .btn.danger{
+      background:#fef2f2;
+      border-color:rgba(220,38,38,.25);
+    }
+    .btn.full{width:100%}
+    .btn:disabled{opacity:.65;cursor:default}
+
+    .logoWrap{
+      width:36px;
+      height:36px;
+      border-radius:11px;
+      border:1px solid rgba(15,23,42,.1);
+      background:#fff;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .logoWrap img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      padding:5px;
+      display:block;
+    }
+    .fallbackBox{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      font-weight:900;
+      font-size:12px;
+      color:rgba(15,23,42,.55);
+      background:#f8fafc;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:var(--liveBg);
+      color:#14532d;
+      border:1px solid var(--liveBorder);
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:900;
+      line-height:1;
+      white-space:nowrap;
+    }
+    .dot{
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:var(--live);
+      box-shadow:0 0 0 3px rgba(22,163,74,.12);
+      flex:0 0 auto;
+    }
+
+    .compactCard{padding:8px}
+    .compactTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      margin-bottom:7px;
+    }
+    .compactLeague{
+      min-width:0;
+      font-size:10px;
+      font-weight:800;
+      color:var(--muted);
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .compactStatus{
+      flex:0 0 auto;
+      font-size:9px;
+      font-weight:900;
+      color:rgba(15,23,42,.74);
+      background:#f8fafc;
+      border:1px solid rgba(15,23,42,.08);
+      padding:3px 6px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .compactTeams{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:6px;
+      align-items:start;
+    }
+    .miniTeam{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:5px;
+      min-width:0;
+    }
+    .miniName{
+      font-size:10px;
+      font-weight:900;
+      line-height:1.1;
+      text-align:center;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+      min-height:2.2em;
+    }
+    .compactScoreBox{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin-top:7px;
+      padding:6px 8px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px solid rgba(15,23,42,.08);
+    }
+    .bigScore{
+      font-weight:950;
+      font-variant-numeric:tabular-nums;
+      letter-spacing:.15px;
+    }
+    .bigScore.compactSize{font-size:18px}
+    .bigScore.detailSize{font-size:20px}
+    .smallMeta{
+      margin-top:6px;
+      font-size:9px;
+      font-weight:850;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.2;
+    }
+    .compactActions{margin-top:7px}
+
+    .selectedCard{padding:8px}
+    .selectedTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:6px;
+      margin-bottom:7px;
+    }
+    .selectedTitle{
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .selectedTournament{
+      font-size:10px;
+      font-weight:900;
+      line-height:1.15;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .selectedMeta{
+      margin-top:2px;
+      font-size:9px;
+      color:var(--muted);
+      font-weight:800;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .teamsRow{
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      gap:6px;
+      align-items:center;
+    }
+    .teamV{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      min-width:0;
+    }
+    .teamVName{
+      font-size:10px;
+      font-weight:900;
+      line-height:1.08;
+      text-align:center;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+      min-height:2.2em;
+    }
+
+    .scoreCenter{
+      min-width:74px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:3px;
+    }
+    .scoreLine{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      font-variant-numeric:tabular-nums;
+    }
+    .scorePiece{
+      display:inline-flex;
+      align-items:center;
+      gap:3px;
+    }
+    .scoreNum{
+      display:inline-block;
+      width:2ch;
+    }
+    .scoreNum.home{text-align:right}
+    .scoreNum.away{text-align:left}
+    .scoreDash{
+      display:inline-block;
+      width:1ch;
+      text-align:center;
+      opacity:.35;
+      font-weight:950;
+    }
+    .metaLine,
+    .serveLine{
+      font-size:9px;
+      line-height:1.1;
+      text-align:center;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .serveLine{
+      text-transform:uppercase;
+      letter-spacing:.25px;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:3px 7px;
+      border-radius:999px;
+      font-size:8px;
+      font-weight:900;
+      line-height:1;
+      text-transform:uppercase;
+      letter-spacing:.28px;
+      margin-top:1px;
+      border:1px solid rgba(2,132,199,.18);
+      background:#eff6ff;
+      color:#1e40af;
+      max-width:100%;
+      text-align:center;
+    }
+    .tag.sideout{
+      background:#eff6ff;
+      border-color:rgba(2,132,199,.18);
+      color:#1e40af;
+    }
+    .tag.break{
+      background:#fef2f2;
+      border-color:rgba(220,38,38,.25);
+      color:#991b1b;
+    }
+    .tag.breakStrong{
+      background:#fee2e2;
+      border-color:rgba(185,28,28,.30);
+      color:#7f1d1d;
+    }
+
+    .actionsRow{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:6px;
+      align-items:center;
+      margin-top:7px;
+    }
+    .dragHandle{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+      cursor:grab;
+      touch-action:none;
+      user-select:none;
+      font-size:10px;
+      font-weight:800;
+      color:rgba(15,23,42,.66);
+    }
+    .dragHandle:active{cursor:grabbing}
+    .grip{
+      display:inline-grid;
+      grid-template-columns:repeat(2,3px);
+      gap:2px;
+      opacity:.6;
+      flex:0 0 auto;
+    }
+    .grip span{
+      width:3px;
+      height:3px;
+      border-radius:999px;
+      background:rgba(15,23,42,.35);
+      display:block;
+    }
+
+    .setsRow{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(38px,1fr));
+      gap:4px;
+      margin-top:7px;
+      padding-top:7px;
+      border-top:1px solid rgba(15,23,42,.06);
+    }
+    .setPill{
+      min-width:0;
+      background:var(--pill);
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:10px;
+      padding:4px 4px 5px;
+      text-align:center;
+    }
+    .setPill.active{
+      background:var(--pillActive);
+      border-color:rgba(37,99,235,.24);
+    }
+    .setLabel{
+      font-size:8px;
+      font-weight:850;
+      color:var(--muted);
+      margin-bottom:2px;
+      line-height:1;
+    }
+    .setScore{
+      font-size:10px;
+      font-weight:950;
+      font-variant-numeric:tabular-nums;
+      line-height:1.1;
+    }
+
+    .scoreIcons{
+      display:inline-flex;
+      align-items:center;
+      gap:2px;
+      font-size:12px;
+      line-height:1;
+    }
+    @keyframes blinkPulse{0%,49%{opacity:1}50%,100%{opacity:.25}}
+    .iconBlink{animation:blinkPulse 1s infinite}
+
+    .card.dragging{
+      opacity:.66;
+      transform:scale(.99);
+      box-shadow:0 14px 28px rgba(2,6,23,.12);
+    }
+    .dropPlaceholder{
+      border:2px dashed rgba(37,99,235,.42);
+      border-radius:var(--radius);
+      background:rgba(37,99,235,.05);
+      box-shadow:none;
+    }
+
+    @media (min-width: 560px){
+      .grid.all,
+      .grid.selected{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+      .logoWrap{width:40px;height:40px}
+      .bigScore.compactSize{font-size:19px}
+      .bigScore.detailSize{font-size:21px}
+    }
+
+    @media (max-width: 359px){
+      header{padding-inline:8px}
+      main{padding-inline:8px}
+      .grid.all,
+      .grid.selected{gap:6px}
+      .logoWrap{width:32px;height:32px;border-radius:10px}
+      .compactCard,.selectedCard{padding:7px}
+      .tab{padding:9px 8px;font-size:11px}
+      .smallMeta,.metaLine,.serveLine,.selectedMeta,.setLabel{font-size:8px}
+      .setScore,.miniName,.teamVName{font-size:9px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="headRow">
+      <div>
+        <h1>Live volleyball</h1>
+        <p class="sub">Mobilvisning for 6–8 kamper samtidig</p>
+      </div>
+      <div class="lastUpdated" id="lastUpdated"></div>
+    </div>
+
+    <div class="tabs">
+      <button id="tabAll" class="tab active" type="button">Alle (0)</button>
+      <button id="tabSelected" class="tab" type="button">Valgte (0)</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="grid" class="grid all"></div>
+    <div id="empty" class="empty" style="display:none"></div>
+  </main>
+
+  <script>
+    const API_URL = "https://volleyball.ronesse.no/live";
+    const LOGO_URL = (teamId) => `https://volleyball.ronesse.no/img/teams/${teamId}.png`;
+
+    const STORAGE_KEY_ORDER = "followed_matches_v2";
+    const STORAGE_KEY_MOMENTUM = "match_momentum_v1";
+
+    let liveMatches = [];
+    let currentTab = "selected";
+    let wakeLock = null;
+    let refreshInFlight = false;
+
+    let followedOrder = loadFollowedOrder();
+    let followedSet = new Set(followedOrder);
+    const lastMomentumByEvent = loadMomentumCache();
+
+    function loadFollowedOrder(){
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_ORDER);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.map(String);
+      } catch {
+        return [];
+      }
+    }
+    function saveFollowedOrder(){
+      localStorage.setItem(STORAGE_KEY_ORDER, JSON.stringify(followedOrder));
+      followedSet = new Set(followedOrder);
+    }
+    function addFollowed(id){
+      id = String(id);
+      if (followedSet.has(id)) return;
+      followedOrder.push(id);
+      saveFollowedOrder();
+    }
+    function removeFollowed(id){
+      id = String(id);
+      if (!followedSet.has(id)) return;
+      followedOrder = followedOrder.filter(x => x !== id);
+      saveFollowedOrder();
+      lastMomentumByEvent.delete(id);
+      saveMomentumCache();
+    }
+    function moveFollowed(fromId, toId){
+      fromId = String(fromId);
+      toId = String(toId);
+      if (fromId === toId) return;
+      const fromIdx = followedOrder.indexOf(fromId);
+      const toIdx = followedOrder.indexOf(toId);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const [item] = followedOrder.splice(fromIdx, 1);
+      const newToIdx = followedOrder.indexOf(toId);
+      followedOrder.splice(newToIdx, 0, item);
+      saveFollowedOrder();
+    }
+    function moveFollowedToEndOfLive(fromId, liveSelectedIds){
+      fromId = String(fromId);
+      if (!liveSelectedIds.length) return;
+      const fromIdx = followedOrder.indexOf(fromId);
+      if (fromIdx < 0) return;
+      const [item] = followedOrder.splice(fromIdx, 1);
+      const lastLiveId = liveSelectedIds[liveSelectedIds.length - 1];
+      const lastIdx = followedOrder.indexOf(lastLiveId);
+      if (lastIdx < 0) followedOrder.push(item);
+      else followedOrder.splice(lastIdx + 1, 0, item);
+      saveFollowedOrder();
+    }
+
+    function loadMomentumCache(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY_MOMENTUM);
+        if (!raw) return new Map();
+        const obj = JSON.parse(raw);
+        if (!obj || typeof obj !== "object") return new Map();
+        const m = new Map();
+        for (const [k,v] of Object.entries(obj)){
+          if (v && typeof v === "object" && (v.side === "home" || v.side === "away")) m.set(String(k), v);
+        }
+        return m;
+      }catch{
+        return new Map();
+      }
+    }
+    function saveMomentumCache(){
+      const MAX = 200;
+      const entries = Array.from(lastMomentumByEvent.entries()).slice(-MAX);
+      const obj = {};
+      for (const [k,v] of entries) obj[String(k)] = v;
+      try{ localStorage.setItem(STORAGE_KEY_MOMENTUM, JSON.stringify(obj)); } catch {}
+    }
+
+    function ordinalToSetNumber(statusDesc){
+      if (!statusDesc) return null;
+      const s = statusDesc.toLowerCase();
+      const m = s.match(/(\d)(st|nd|rd|th)\s+set/);
+      if (m) return parseInt(m[1], 10);
+      return null;
+    }
+    function lastNonNullSetIndex(match){
+      const hs = [match.home_p1, match.home_p2, match.home_p3, match.home_p4, match.home_p5];
+      const as = [match.away_p1, match.away_p2, match.away_p3, match.away_p4, match.away_p5];
+      let last = 0;
+      for (let i = 0; i < 5; i++) if (hs[i] != null || as[i] != null) last = i + 1;
+      return last || 1;
+    }
+    function getCurrentSetNumber(match){
+      return ordinalToSetNumber(match.status_desc) || lastNonNullSetIndex(match);
+    }
+    function getPointsForSet(match, setNo){
+      return { h: match[`home_p${setNo}`], a: match[`away_p${setNo}`] };
+    }
+
+    function iconToGlyph(icon){
+      if (icon === "ball") return "🏐";
+      if (icon === "flame") return "🔥";
+      if (icon === "party") return "🎉";
+      return "";
+    }
+    function computeMomentumFromMatch(match){
+      const homeRun = Number(match.home_point_run || 0);
+      const awayRun = Number(match.away_point_run || 0);
+      let side = null;
+      let run = 0;
+      if (homeRun !== 0 && awayRun === 0){ side = "home"; run = homeRun; }
+      else if (awayRun !== 0 && homeRun === 0){ side = "away"; run = awayRun; }
+      else if (homeRun !== 0 || awayRun !== 0){
+        if (homeRun >= awayRun){ side = "home"; run = homeRun; }
+        else { side = "away"; run = awayRun; }
+      } else return null;
+
+      const cfg = { side, run, icons: [], blink: false, tagText: "SIDE-OUT", tagClass: "sideout", ts: Date.now() };
+      if (run === 1){
+        cfg.icons = ["ball"];
+        cfg.tagText = "SIDE-OUT";
+        cfg.tagClass = "sideout";
+      } else if (run === 2){
+        cfg.icons = ["ball", "flame"];
+        cfg.tagText = "BREAK-POINT";
+        cfg.tagClass = "break";
+      } else if (run === 3){
+        cfg.icons = ["ball", "flame"];
+        cfg.blink = true;
+        cfg.tagText = "DBL BREAK";
+        cfg.tagClass = "breakStrong";
+      } else if (run >= 4){
+        cfg.icons = ["ball", "flame", "party"];
+        cfg.tagText = "3RD BREAK";
+        cfg.tagClass = "breakStrong";
+      }
+      return cfg;
+    }
+    function getMomentum(match){
+      const id = String(match.event_id);
+      if (match.new_score === 1){
+        const m = computeMomentumFromMatch(match);
+        if (m){
+          lastMomentumByEvent.set(id, m);
+          saveMomentumCache();
+        }
+        return m || lastMomentumByEvent.get(id) || null;
+      }
+      return lastMomentumByEvent.get(id) || null;
+    }
+
+    function makeLogo(teamId, fallbackLetter){
+      const wrap = document.createElement("div");
+      wrap.className = "logoWrap";
+      const img = document.createElement("img");
+      img.alt = "Team logo";
+      img.loading = "lazy";
+      img.src = LOGO_URL(teamId);
+      img.onerror = () => {
+        wrap.innerHTML = "";
+        const fb = document.createElement("div");
+        fb.className = "fallbackBox";
+        fb.textContent = fallbackLetter;
+        wrap.appendChild(fb);
+      };
+      wrap.appendChild(img);
+      return wrap;
+    }
+
+    function formatUtc(utcString){
+      if (!utcString) return "";
+      const d = new Date(utcString);
+      if (Number.isNaN(d.getTime())) return String(utcString);
+      return d.toLocaleString("no-NO", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function setLastUpdated(text){
+      document.getElementById("lastUpdated").textContent = text;
+    }
+    function updateTabLabels(){
+      const allCount = liveMatches.filter(m => m.status_type === "inprogress").length;
+      const selectedCount = followedOrder.filter(id => liveMatches.some(m => String(m.event_id) === id && m.status_type === "inprogress")).length;
+      document.getElementById("tabAll").textContent = `Alle (${allCount})`;
+      document.getElementById("tabSelected").textContent = `Valgte (${selectedCount})`;
+    }
+    function setActiveTab(tab){
+      currentTab = tab;
+      document.getElementById("tabAll").classList.toggle("active", tab === "all");
+      document.getElementById("tabSelected").classList.toggle("active", tab === "selected");
+      const grid = document.getElementById("grid");
+      grid.className = `grid ${tab}`;
+      render();
+      ensureWakeLock();
+    }
+
+    async function requestWakeLock(){
+      try{
+        if (!("wakeLock" in navigator)) return;
+        if (wakeLock) return;
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      }catch{}
+    }
+    async function releaseWakeLock(){
+      try{
+        if (wakeLock){
+          await wakeLock.release();
+          wakeLock = null;
+        }
+      }catch{ wakeLock = null; }
+    }
+    function hasLiveFollowedMatches(){
+      const followedIds = new Set(followedOrder);
+      return liveMatches.some(m => m.status_type === "inprogress" && followedIds.has(String(m.event_id)));
+    }
+    function ensureWakeLock(){
+      const shouldKeepAwake = currentTab === "selected" && hasLiveFollowedMatches() && document.visibilityState === "visible";
+      if (shouldKeepAwake) requestWakeLock();
+      else releaseWakeLock();
+    }
+    document.addEventListener("visibilitychange", ensureWakeLock);
+
+    function renderSetPills(match, currentSet){
+      const row = document.createElement("div");
+      row.className = "setsRow";
+      for (let i = 1; i <= 5; i++){
+        const { h, a } = getPointsForSet(match, i);
+        if (h == null && a == null) continue;
+        const pill = document.createElement("div");
+        pill.className = "setPill" + (i === currentSet ? " active" : "");
+        const label = document.createElement("div");
+        label.className = "setLabel";
+        label.textContent = `${i}. sett`;
+        const score = document.createElement("div");
+        score.className = "setScore";
+        score.textContent = `${h ?? 0}-${a ?? 0}`;
+        pill.appendChild(label);
+        pill.appendChild(score);
+        row.appendChild(pill);
+      }
+      return row;
+    }
+
+    function renderCompactCard(match){
+      const currentSet = getCurrentSetNumber(match);
+      const points = getPointsForSet(match, currentSet);
+      const card = document.createElement("div");
+      card.className = "card compactCard";
+
+      const top = document.createElement("div");
+      top.className = "compactTop";
+
+      const league = document.createElement("div");
+      league.className = "compactLeague";
+      league.title = `${match.tournament_name} · ${match.season_name}`;
+      league.textContent = `${match.tournament_name} · ${match.season_name}`;
+
+      const status = document.createElement("div");
+      status.className = "compactStatus";
+      status.textContent = match.status_desc ?? "LIVE";
+
+      top.appendChild(league);
+      top.appendChild(status);
+
+      const teams = document.createElement("div");
+      teams.className = "compactTeams";
+
+      const home = document.createElement("div");
+      home.className = "miniTeam";
+      home.appendChild(makeLogo(match.home_team_id, "H"));
+      const homeName = document.createElement("div");
+      homeName.className = "miniName";
+      homeName.textContent = match.home_team_name;
+      home.appendChild(homeName);
+
+      const away = document.createElement("div");
+      away.className = "miniTeam";
+      away.appendChild(makeLogo(match.away_team_id, "A"));
+      const awayName = document.createElement("div");
+      awayName.className = "miniName";
+      awayName.textContent = match.away_team_name;
+      away.appendChild(awayName);
+
+      teams.appendChild(home);
+      teams.appendChild(away);
+
+      const scoreBox = document.createElement("div");
+      scoreBox.className = "compactScoreBox";
+      const hEl = document.createElement("div");
+      hEl.className = "bigScore compactSize";
+      hEl.textContent = `${points.h ?? 0}`;
+      const dash = document.createElement("div");
+      dash.style.opacity = ".35";
+      dash.style.fontWeight = "950";
+      dash.textContent = "-";
+      const aEl = document.createElement("div");
+      aEl.className = "bigScore compactSize";
+      aEl.textContent = `${points.a ?? 0}`;
+      scoreBox.appendChild(hEl);
+      scoreBox.appendChild(dash);
+      scoreBox.appendChild(aEl);
+
+      const meta = document.createElement("div");
+      meta.className = "smallMeta";
+      meta.textContent = `${match.home_sets ?? 0}-${match.away_sets ?? 0} sett · ${currentSet}. sett`;
+
+      const actions = document.createElement("div");
+      actions.className = "compactActions";
+      const id = String(match.event_id);
+      const btn = document.createElement("button");
+      btn.className = "btn primary full";
+      btn.textContent = followedSet.has(id) ? "Følger" : "Følg";
+      btn.disabled = followedSet.has(id);
+      btn.onclick = () => {
+        addFollowed(id);
+        updateTabLabels();
+        render();
+        ensureWakeLock();
+      };
+      actions.appendChild(btn);
+
+      card.appendChild(top);
+      card.appendChild(teams);
+      card.appendChild(scoreBox);
+      card.appendChild(meta);
+      card.appendChild(actions);
+      return card;
+    }
+
+    let draggingId = null;
+    let dragActive = false;
+    let pressTimer = null;
+    let placeholderEl = null;
+    let placeholderHeight = 0;
+    let dropBeforeId = null;
+
+    function clearPlaceholder(){
+      if (placeholderEl && placeholderEl.parentElement) placeholderEl.parentElement.removeChild(placeholderEl);
+      placeholderEl = null;
+    }
+    function ensurePlaceholder(){
+      if (placeholderEl) return;
+      placeholderEl = document.createElement("div");
+      placeholderEl.className = "dropPlaceholder";
+      placeholderEl.style.height = `${placeholderHeight}px`;
+      document.getElementById("grid").appendChild(placeholderEl);
+    }
+    function placePlaceholderBefore(card){
+      ensurePlaceholder();
+      document.getElementById("grid").insertBefore(placeholderEl, card);
+    }
+    function placePlaceholderAtEnd(){
+      ensurePlaceholder();
+      document.getElementById("grid").appendChild(placeholderEl);
+    }
+    function cleanupDragUI(sourceCard){
+      if (sourceCard) sourceCard.classList.remove("dragging");
+      dragActive = false;
+      draggingId = null;
+      dropBeforeId = null;
+      clearPlaceholder();
+    }
+    function getLiveSelectedIdsInOrder(){
+      const inprogress = liveMatches.filter(m => m.status_type === "inprogress");
+      const matchById = new Map(inprogress.map(m => [String(m.event_id), m]));
+      return followedOrder.map(id => String(id)).filter(id => matchById.has(id));
+    }
+    function attachDragHandlers(cardEl, eventId){
+      const handle = cardEl.querySelector(".dragHandle");
+      if (!handle) return;
+      let startX = 0, startY = 0;
+
+      handle.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = cardEl.getBoundingClientRect();
+        placeholderHeight = Math.max(70, Math.round(rect.height));
+        pressTimer = setTimeout(() => {
+          dragActive = true;
+          draggingId = eventId;
+          dropBeforeId = null;
+          if (navigator.vibrate) navigator.vibrate(15);
+          cardEl.classList.add("dragging");
+          handle.setPointerCapture?.(e.pointerId);
+          ensurePlaceholder();
+          if (cardEl.nextSibling) cardEl.parentElement.insertBefore(placeholderEl, cardEl.nextSibling);
+          else cardEl.parentElement.appendChild(placeholderEl);
+        }, 150);
+      });
+
+      handle.addEventListener("pointermove", (e) => {
+        if (!dragActive){
+          if (pressTimer){
+            const dx = Math.abs(e.clientX - startX);
+            const dy = Math.abs(e.clientY - startY);
+            if (dx + dy > 8){
+              clearTimeout(pressTimer);
+              pressTimer = null;
+            }
+          }
+          return;
+        }
+        const margin = 70;
+        const speed = 12;
+        if (e.clientY < margin) window.scrollBy(0, -speed);
+        else if (e.clientY > window.innerHeight - margin) window.scrollBy(0, speed);
+
+        const over = document.elementFromPoint(e.clientX, e.clientY);
+        const overCard = over?.closest?.(".card[data-eid]");
+        if (overCard && overCard.dataset.eid && overCard.dataset.eid !== draggingId){
+          placePlaceholderBefore(overCard);
+          dropBeforeId = overCard.dataset.eid;
+        } else {
+          placePlaceholderAtEnd();
+          dropBeforeId = null;
+        }
+      });
+
+      handle.addEventListener("pointerup", () => {
+        if (pressTimer){
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+        if (!dragActive) return;
+        const fromId = draggingId;
+        const liveIds = getLiveSelectedIdsInOrder().filter(id => id !== fromId);
+        if (dropBeforeId && dropBeforeId !== fromId) moveFollowed(fromId, dropBeforeId);
+        else {
+          const newLive = liveIds.concat([fromId]);
+          moveFollowedToEndOfLive(fromId, newLive);
+        }
+        render();
+        cleanupDragUI(cardEl);
+      });
+
+      handle.addEventListener("pointercancel", () => {
+        if (pressTimer){
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+        cleanupDragUI(cardEl);
+      });
+    }
+
+    function renderSelectedCard(match){
+      const currentSet = getCurrentSetNumber(match);
+      const points = getPointsForSet(match, currentSet);
+      const momentum = getMomentum(match);
+
+      const card = document.createElement("div");
+      card.className = "card selectedCard";
+      card.dataset.eid = String(match.event_id);
+
+      const top = document.createElement("div");
+      top.className = "selectedTop";
+
+      const title = document.createElement("div");
+      title.className = "selectedTitle";
+      const t = document.createElement("div");
+      t.className = "selectedTournament";
+      t.textContent = match.tournament_name || "";
+      const m = document.createElement("div");
+      m.className = "selectedMeta";
+      m.textContent = `${match.season_name || ""} · R${match.round ?? "-"} · ${formatUtc(match.start_utc)}`;
+      title.appendChild(t);
+      title.appendChild(m);
+
+      const badge = document.createElement("div");
+      badge.className = "badge";
+      const dot = document.createElement("span");
+      dot.className = "dot";
+      const text = document.createElement("span");
+      text.textContent = match.status_desc ?? "LIVE";
+      badge.appendChild(dot);
+      badge.appendChild(text);
+
+      top.appendChild(title);
+      top.appendChild(badge);
+
+      const teamsRow = document.createElement("div");
+      teamsRow.className = "teamsRow";
+
+      const home = document.createElement("div");
+      home.className = "teamV";
+      home.appendChild(makeLogo(match.home_team_id, "H"));
+      const homeName = document.createElement("div");
+      homeName.className = "teamVName";
+      homeName.title = match.home_team_name;
+      homeName.textContent = match.home_team_name;
+      home.appendChild(homeName);
+
+      const away = document.createElement("div");
+      away.className = "teamV";
+      away.appendChild(makeLogo(match.away_team_id, "A"));
+      const awayName = document.createElement("div");
+      awayName.className = "teamVName";
+      awayName.title = match.away_team_name;
+      awayName.textContent = match.away_team_name;
+      away.appendChild(awayName);
+
+      const center = document.createElement("div");
+      center.className = "scoreCenter";
+
+      const big = document.createElement("div");
+      big.className = "bigScore detailSize scoreLine";
+
+      const homePiece = document.createElement("span");
+      homePiece.className = "scorePiece";
+      const awayPiece = document.createElement("span");
+      awayPiece.className = "scorePiece";
+      const homeIcons = document.createElement("span");
+      homeIcons.className = "scoreIcons";
+      const awayIcons = document.createElement("span");
+      awayIcons.className = "scoreIcons";
+
+      if (momentum){
+        const iconsEl = momentum.side === "home" ? homeIcons : awayIcons;
+        for (const ic of momentum.icons){
+          const sp = document.createElement("span");
+          sp.className = (momentum.blink ? "iconBlink " : "") + ic;
+          sp.textContent = iconToGlyph(ic);
+          iconsEl.appendChild(sp);
+        }
+      }
+
+      const homeNum = document.createElement("span");
+      homeNum.className = "scoreNum home";
+      homeNum.textContent = `${points.h ?? 0}`;
+      const awayNum = document.createElement("span");
+      awayNum.className = "scoreNum away";
+      awayNum.textContent = `${points.a ?? 0}`;
+      const dash = document.createElement("span");
+      dash.className = "scoreDash";
+      dash.textContent = "-";
+
+      homePiece.appendChild(homeIcons);
+      homePiece.appendChild(homeNum);
+      awayPiece.appendChild(awayNum);
+      awayPiece.appendChild(awayIcons);
+      big.appendChild(homePiece);
+      big.appendChild(dash);
+      big.appendChild(awayPiece);
+
+      const meta = document.createElement("div");
+      meta.className = "metaLine";
+      meta.textContent = `${match.home_sets ?? 0}-${match.away_sets ?? 0} sett · ${currentSet}. sett`;
+
+      let serveTeam = "UKJENT";
+      if (momentum) serveTeam = momentum.side === "home" ? match.home_team_name : match.away_team_name;
+      const serve = document.createElement("div");
+      serve.className = "serveLine";
+      serve.textContent = `Serve · ${serveTeam}`;
+
+      const tag = document.createElement("div");
+      tag.className = "tag";
+      const isPause = (match.status_desc || "").toLowerCase() === "pause";
+      if (isPause){
+        tag.classList.add("sideout");
+        tag.textContent = "Pause";
+      } else if (momentum){
+        tag.classList.add(momentum.tagClass);
+        tag.textContent = momentum.tagText;
+      } else {
+        tag.classList.add("sideout");
+        tag.textContent = "Side-out";
+      }
+
+      center.appendChild(big);
+      center.appendChild(meta);
+      center.appendChild(serve);
+      center.appendChild(tag);
+
+      teamsRow.appendChild(home);
+      teamsRow.appendChild(center);
+      teamsRow.appendChild(away);
+
+      const actions = document.createElement("div");
+      actions.className = "actionsRow";
+      const handle = document.createElement("span");
+      handle.className = "dragHandle";
+      const grip = document.createElement("span");
+      grip.className = "grip";
+      grip.innerHTML = "<span></span><span></span><span></span><span></span><span></span><span></span>";
+      const txt = document.createElement("span");
+      txt.textContent = "Hold og dra";
+      handle.appendChild(grip);
+      handle.appendChild(txt);
+
+      const unfollowBtn = document.createElement("button");
+      unfollowBtn.className = "btn danger";
+      unfollowBtn.textContent = "Slutt";
+      unfollowBtn.onclick = (e) => {
+        e.stopPropagation();
+        removeFollowed(String(match.event_id));
+        updateTabLabels();
+        render();
+        ensureWakeLock();
+      };
+
+      actions.appendChild(handle);
+      actions.appendChild(unfollowBtn);
+
+      card.appendChild(top);
+      card.appendChild(teamsRow);
+      card.appendChild(actions);
+      card.appendChild(renderSetPills(match, currentSet));
+
+      attachDragHandlers(card, String(match.event_id));
+      return card;
+    }
+
+    function render(){
+      const grid = document.getElementById("grid");
+      const empty = document.getElementById("empty");
+      grid.innerHTML = "";
+      const inprogress = liveMatches.filter(m => m.status_type === "inprogress");
+
+      if (currentTab === "all"){
+        if (inprogress.length === 0){
+          empty.style.display = "block";
+          empty.textContent = "Ingen livekamper akkurat nå.";
+          return;
+        }
+        empty.style.display = "none";
+        inprogress.slice().sort((a,b) => (b.change_ts ?? 0) - (a.change_ts ?? 0)).forEach(m => {
+          grid.appendChild(renderCompactCard(m));
+        });
+      } else {
+        const matchById = new Map(inprogress.map(m => [String(m.event_id), m]));
+        const orderedLiveSelected = followedOrder.map(id => matchById.get(String(id))).filter(Boolean);
+        if (orderedLiveSelected.length === 0){
+          empty.style.display = "block";
+          empty.textContent = "Du har ingen valgte livekamper. Gå til «Alle» og trykk Følg.";
+          return;
+        }
+        empty.style.display = "none";
+        orderedLiveSelected.forEach(m => grid.appendChild(renderSelectedCard(m)));
+      }
+    }
+
+    async function fetchLive(){
+      const res = await fetch(API_URL, { headers: { accept: "application/json" } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    }
+
+    function cleanupMomentumCache(){
+      const liveIds = new Set(liveMatches.filter(m => m.status_type === "inprogress").map(m => String(m.event_id)));
+      let changed = false;
+      for (const key of lastMomentumByEvent.keys()){
+        if (!liveIds.has(key) && !followedSet.has(key)){
+          lastMomentumByEvent.delete(key);
+          changed = true;
+        }
+      }
+      if (changed) saveMomentumCache();
+    }
+
+    async function refresh(){
+      if (refreshInFlight) return;
+      refreshInFlight = true;
+      try{
+        liveMatches = await fetchLive();
+        cleanupMomentumCache();
+        updateTabLabels();
+        render();
+        setLastUpdated(`Oppdatert ${new Date().toLocaleTimeString("no-NO", {hour:"2-digit", minute:"2-digit", second:"2-digit"})}`);
+        ensureWakeLock();
+      } catch (err){
+        liveMatches = [];
+        updateTabLabels();
+        render();
+        const empty = document.getElementById("empty");
+        empty.style.display = "block";
+        empty.textContent = `Kunne ikke hente livekamper (${err.message}).`;
+        setLastUpdated(`Feil ${new Date().toLocaleTimeString("no-NO", {hour:"2-digit", minute:"2-digit"})}`);
+        ensureWakeLock();
+      } finally {
+        refreshInFlight = false;
+      }
+    }
+
+    document.getElementById("tabAll").addEventListener("click", () => setActiveTab("all"));
+    document.getElementById("tabSelected").addEventListener("click", () => setActiveTab("selected"));
+
+    setActiveTab("selected");
+    refresh();
+    setInterval(refresh, 10000);
+  </script>
+</body>
+</html>
