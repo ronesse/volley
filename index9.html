@@ -1,425 +1,744 @@
 <!doctype html>
 <html lang="no">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-
-<title>Live volleyball</title>
-
-<style>
-
-:root{
-
---bgTop:#26344b;
---bg:#edf1f5;
---card:#f7f8fa;
---card2:#f2f4f7;
-
---text:#1f2937;
---muted:#6b7280;
-
---line:rgba(31,41,55,.08);
---shadow:0 6px 16px rgba(0,0,0,.05);
-
---live:#22c55e;
-
-}
-
-body.dark{
-
---bgTop:#1f2937;
---bg:#2b3442;
---card:#364152;
---card2:#313b4b;
-
---text:#e7ebf1;
---muted:#b3bdc9;
-
---line:rgba(255,255,255,.08);
-
---shadow:0 6px 16px rgba(0,0,0,.18);
-
-}
-
-*{box-sizing:border-box}
-
-body{
-margin:0;
-font-family:system-ui,-apple-system,Segoe UI,Roboto;
-
-background:linear-gradient(180deg,var(--bgTop) 0,var(--bgTop) 100px,var(--bg) 100%);
-color:var(--text);
-}
-
-header{
-max-width:850px;
-margin:auto;
-padding:12px;
-color:white;
-}
-
-h1{
-margin:0;
-font-size:16px;
-}
-
-.tabs{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:8px;
-margin-top:10px;
-}
-
-.tab{
-background:rgba(255,255,255,.1);
-border:1px solid rgba(255,255,255,.2);
-color:white;
-padding:9px;
-border-radius:30px;
-font-weight:700;
-cursor:pointer;
-}
-
-.tab.active{
-background:white;
-color:#111;
-}
-
-main{
-max-width:850px;
-margin:auto;
-padding:10px;
-}
-
-.grid{
-display:grid;
-gap:8px;
-}
-
-.grid.all{
-grid-template-columns:repeat(2,1fr);
-}
-
-.grid.selected{
-grid-template-columns:repeat(2,1fr);
-}
-
-.card{
-background:var(--card);
-border:1px solid var(--line);
-border-radius:14px;
-padding:8px;
-box-shadow:var(--shadow);
-}
-
-.selectedCard{
-cursor:pointer;
-}
-
-.team{
-text-align:center;
-font-weight:700;
-font-size:10px;
-}
-
-.score{
-text-align:center;
-font-size:18px;
-font-weight:900;
-}
-
-.meta{
-text-align:center;
-font-size:9px;
-color:var(--muted);
-}
-
-.actions{
-display:flex;
-justify-content:space-between;
-margin-top:6px;
-}
-
-.btn{
-border-radius:20px;
-border:1px solid var(--line);
-padding:4px 10px;
-font-size:9px;
-cursor:pointer;
-background:var(--card2);
-}
-
-.btn.danger{
-background:#f3e8e8;
-}
-
-.sets{
-display:none;
-margin-top:6px;
-border-top:1px solid var(--line);
-padding-top:6px;
-font-size:9px;
-}
-
-.selectedCard.expanded .sets{
-display:block;
-}
-
-.themeToggle{
-position:absolute;
-right:12px;
-top:12px;
-width:36px;
-height:36px;
-border-radius:50%;
-border:none;
-cursor:pointer;
-font-size:16px;
-}
-
-</style>
-</head>
-
-<body>
-
-<header>
-
-<button id="themeToggle" class="themeToggle">🌙</button>
-
-<h1>Live volleyball</h1>
-
-<div class="tabs">
-<button id="tabSelected" class="tab active">Valgte</button>
-<button id="tabAll" class="tab">Alle</button>
-</div>
-
-</header>
-
-<main>
-
-<div id="grid" class="grid selected"></div>
-
-</main>
-
-<script>
-
-const LIVE_API="https://volleyball.ronesse.no/live"
-const TEAMS_API="https://volleyball.ronesse.no/teams?limit=200&offset=0"
-
-let liveMatches=[]
-let favoriteTeamIds=new Set()
-
-let startedMatches=new Set()
-
-let followedOrder=JSON.parse(localStorage.getItem("followed")||"[]")
-
-let currentTab="selected"
-
-function saveFollowed(){
-localStorage.setItem("followed",JSON.stringify(followedOrder))
-}
-
-async function fetchLive(){
-
-const r=await fetch(LIVE_API)
-return await r.json()
-
-}
-
-async function fetchTeams(){
-
-const r=await fetch(TEAMS_API)
-const teams=await r.json()
-
-favoriteTeamIds=new Set(
-
-teams
-.filter(t=>t.group_type==="mizuno"||t.group_type==="abroad")
-.map(t=>String(t.id))
-
-)
-
-}
-
-function isFavoriteMatch(m){
-
-return favoriteTeamIds.has(String(m.home_team_id)) ||
-favoriteTeamIds.has(String(m.away_team_id))
-
-}
-
-function vibrate(){
-
-if(navigator.vibrate){
-
-navigator.vibrate([120,60,120])
-
-}
-
-}
-
-function checkStartAlerts(matches){
-
-for(const m of matches){
-
-const id=String(m.event_id)
-
-if(!startedMatches.has(id) && isFavoriteMatch(m)){
-
-startedMatches.add(id)
-
-vibrate()
-
-}
-
-}
-
-}
-
-function render(){
-
-const grid=document.getElementById("grid")
-
-grid.innerHTML=""
-
-const inprogress=liveMatches.filter(m=>m.status_type==="inprogress")
-
-let matches=[]
-
-if(currentTab==="all"){
-
-matches=inprogress
-
-}else{
-
-const manual=inprogress.filter(m=>followedOrder.includes(String(m.event_id)))
-
-const auto=inprogress.filter(m=>isFavoriteMatch(m) && !followedOrder.includes(String(m.event_id)))
-
-matches=[...manual,...auto]
-
-}
-
-matches.forEach(m=>{
-
-grid.appendChild(renderCard(m))
-
-})
-
-}
-
-function renderCard(m){
-
-const id=String(m.event_id)
-
-const card=document.createElement("div")
-card.className="card selectedCard"
-
-card.onclick=()=>{
-
-card.classList.toggle("expanded")
-
-}
-
-const home=m.home_team_name
-const away=m.away_team_name
-
-const hs=m.home_sets||0
-const as=m.away_sets||0
-
-const set=1
-
-const hp=m.home_p1||0
-const ap=m.away_p1||0
-
-card.innerHTML=`
-
-<div class="team">${home}</div>
-
-<div class="score">${hp} - ${ap}</div>
-
-<div class="team">${away}</div>
-
-<div class="meta">${hs}-${as}</div>
-
-<div class="actions">
-
-<button class="btn">Dra</button>
-
-<button class="btn danger">Slutt</button>
-
-</div>
-
-<div class="sets">
-
-Serve info og settstatistikk
-
-</div>
-
-`
-
-return card
-
-}
-
-async function refresh(){
-
-liveMatches=await fetchLive()
-
-checkStartAlerts(liveMatches)
-
-render()
-
-}
-
-document.getElementById("tabAll").onclick=()=>{
-
-currentTab="all"
-
-document.getElementById("tabAll").classList.add("active")
-document.getElementById("tabSelected").classList.remove("active")
-
-document.getElementById("grid").className="grid all"
-
-render()
-
-}
-
-document.getElementById("tabSelected").onclick=()=>{
-
-currentTab="selected"
-
-document.getElementById("tabSelected").classList.add("active")
-document.getElementById("tabAll").classList.remove("active")
-
-document.getElementById("grid").className="grid selected"
-
-render()
-
-}
-
-document.getElementById("themeToggle").onclick=()=>{
-
-document.body.classList.toggle("dark")
-
-document.getElementById("themeToggle").textContent=
-document.body.classList.contains("dark")?"☀️":"🌙"
-
-}
-
-async function init(){
-
-await fetchTeams()
-
-await refresh()
-
-setInterval(refresh,10000)
-
-}
-
-init()
-
-</script>
-
-</body>
-</html>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Live volleyball</title>
+  <style>
+    :root{
+      color-scheme: light;
+
+      --bgTop:#243048;
+      --bg:#edf1f5;
+      --card:#f7f8fa;
+      --card2:#f2f4f7;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:rgba(31,41,55,.08);
+      --shadow:0 7px 18px rgba(15,23,42,.06);
+      --radius:15px;
+
+      --live:#22c55e;
+      --liveBg:#edf9f1;
+      --liveBorder:rgba(34,197,94,.18);
+
+      --pill:#f1f4f7;
+      --pillActive:#dbe7f6;
+
+      --tabBg:rgba(255,255,255,.10);
+      --tabBorder:rgba(255,255,255,.16);
+
+      --dangerBg:#f8eded;
+      --dangerBorder:rgba(220,38,38,.16);
+      --dangerText:#7f1d1d;
+
+      --primaryBg:#e9f0f9;
+      --primaryBorder:rgba(37,99,235,.18);
+
+      --scoreBg:#f1f4f7;
+      --toggleBg:rgba(255,255,255,.10);
+      --toggleBorder:rgba(255,255,255,.14);
+
+      --autoBadgeBg:rgba(245,158,11,.10);
+      --autoBadgeBorder:rgba(245,158,11,.18);
+      --autoBadgeText:#b45309;
+    }
+
+    body.dark{
+      color-scheme: dark;
+
+      --bgTop:#1f2937;
+      --bg:#2b3442;
+      --card:#364152;
+      --card2:#313b4b;
+      --text:#e7ebf1;
+      --muted:#b3bdc9;
+      --line:rgba(255,255,255,.08);
+      --shadow:0 7px 18px rgba(0,0,0,.14);
+
+      --live:#4ade80;
+      --liveBg:rgba(74,222,128,.12);
+      --liveBorder:rgba(74,222,128,.16);
+
+      --pill:#3a4658;
+      --pillActive:#44546d;
+
+      --tabBg:rgba(255,255,255,.07);
+      --tabBorder:rgba(255,255,255,.10);
+
+      --dangerBg:rgba(220,38,38,.10);
+      --dangerBorder:rgba(248,113,113,.18);
+      --dangerText:#fecaca;
+
+      --primaryBg:rgba(96,165,250,.12);
+      --primaryBorder:rgba(96,165,250,.20);
+
+      --scoreBg:#303a49;
+      --toggleBg:rgba(255,255,255,.07);
+      --toggleBorder:rgba(255,255,255,.10);
+
+      --autoBadgeBg:rgba(245,158,11,.10);
+      --autoBadgeBorder:rgba(245,158,11,.16);
+      --autoBadgeText:#fbbf24;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:linear-gradient(180deg,var(--bgTop) 0%,var(--bgTop) 98px,var(--bg) 98px,var(--bg) 100%);
+      color:var(--text);
+      -webkit-tap-highlight-color:transparent;
+      transition:background-color .2s ease,color .2s ease;
+    }
+
+    header{
+      max-width:860px;
+      margin:0 auto;
+      padding:11px 9px 9px;
+      color:#fff;
+    }
+    .headRow{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .headLeft{min-width:0}
+    .headRight{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+      flex:0 0 auto;
+    }
+    h1{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:.18px;
+    }
+    .sub{
+      margin:3px 0 0;
+      font-size:10px;
+      line-height:1.2;
+      color:rgba(255,255,255,.78);
+    }
+    .lastUpdated{
+      font-size:10px;
+      white-space:nowrap;
+      color:rgba(255,255,255,.75);
+      text-align:right;
+    }
+
+    .themeToggle{
+      appearance:none;
+      border:1px solid var(--toggleBorder);
+      background:var(--toggleBg);
+      color:#fff;
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      font-size:16px;
+      line-height:1;
+      backdrop-filter:blur(6px);
+    }
+
+    .tabs{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:7px;
+      margin-top:9px;
+    }
+    .tab{
+      appearance:none;
+      border:1px solid var(--tabBorder);
+      background:var(--tabBg);
+      color:#fff;
+      padding:9px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:900;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .tab.active{
+      background:rgba(255,255,255,.88);
+      color:#1f2937;
+      border-color:rgba(255,255,255,.35);
+    }
+
+    main{
+      max-width:860px;
+      margin:0 auto;
+      padding:9px 9px 16px;
+    }
+
+    .grid{
+      display:grid;
+      gap:7px;
+    }
+
+    .grid.all{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .grid.selected.selected-1,
+    .grid.selected.selected-2{
+      grid-template-columns:1fr;
+    }
+    .grid.selected.selected-4,
+    .grid.selected.selected-6,
+    .grid.selected.selected-8plus{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-width:0;
+      transition:background-color .2s ease,border-color .2s ease;
+    }
+
+    .empty{
+      padding:16px;
+      border-radius:15px;
+      text-align:center;
+      background:var(--card);
+      border:1px dashed var(--line);
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid var(--line);
+      background:var(--card2);
+      color:var(--text);
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:10px;
+      font-weight:900;
+      cursor:pointer;
+      min-height:30px;
+    }
+    .btn.primary{
+      background:var(--primaryBg);
+      border-color:var(--primaryBorder);
+    }
+    .btn.danger{
+      background:var(--dangerBg);
+      border-color:var(--dangerBorder);
+      color:var(--dangerText);
+    }
+    .btn.full{width:100%}
+    .btn:disabled{opacity:.65;cursor:default}
+
+    .logoWrap{
+      border-radius:11px;
+      border:1px solid var(--line);
+      background:var(--card2);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+    .logoWrap img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      padding:4px;
+    }
+    .fallbackBox{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      font-size:11px;
+      font-weight:900;
+      color:var(--muted);
+      background:var(--card2);
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      background:var(--liveBg);
+      color:var(--live);
+      border:1px solid var(--liveBorder);
+      padding:4px 7px;
+      border-radius:999px;
+      font-size:9px;
+      font-weight:900;
+      line-height:1;
+      white-space:nowrap;
+    }
+    .dot{
+      width:6px;
+      height:6px;
+      border-radius:999px;
+      background:var(--live);
+      box-shadow:0 0 0 3px rgba(34,197,94,.08);
+      flex:0 0 auto;
+    }
+
+    .autoBadge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid var(--autoBadgeBorder);
+      background:var(--autoBadgeBg);
+      color:var(--autoBadgeText);
+      font-size:8px;
+      font-weight:900;
+      line-height:1;
+      text-transform:uppercase;
+    }
+
+    .compactCard{ padding:7px; }
+    .compactTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:5px;
+      margin-bottom:6px;
+    }
+    .compactLeague{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:9px;
+      font-weight:800;
+      color:var(--muted);
+    }
+    .compactStatus{
+      flex:0 0 auto;
+      font-size:8px;
+      font-weight:900;
+      color:var(--muted);
+      background:var(--card2);
+      border:1px solid var(--line);
+      padding:3px 5px;
+      border-radius:999px;
+      white-space:nowrap;
+    }
+    .compactTeams{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:5px;
+      align-items:start;
+    }
+    .miniTeam{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      min-width:0;
+    }
+    .miniName{
+      font-size:9px;
+      font-weight:900;
+      line-height:1.05;
+      text-align:center;
+      min-height:2.1em;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+    }
+    .compactCard .logoWrap{
+      width:33px;
+      height:33px;
+    }
+    .compactScoreBox{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      margin-top:6px;
+      padding:5px 7px;
+      border-radius:11px;
+      background:var(--scoreBg);
+      border:1px solid var(--line);
+    }
+
+    .bigScore{
+      font-weight:950;
+      letter-spacing:.12px;
+      font-variant-numeric:tabular-nums;
+    }
+    .bigScore.compactSize{ font-size:17px; }
+    .bigScore.detailSize{ font-size:22px; }
+
+    .smallMeta{
+      margin-top:5px;
+      font-size:8px;
+      font-weight:850;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.15;
+    }
+    .compactActions{
+      margin-top:6px;
+    }
+
+    .selectedCard{
+      display:flex;
+      flex-direction:column;
+      cursor:pointer;
+    }
+    .selectedTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:5px;
+      margin-bottom:6px;
+    }
+    .selectedTitle{
+      min-width:0;
+      flex:1 1 auto;
+    }
+    .selectedTournament{
+      font-weight:900;
+      line-height:1.08;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .selectedMeta{
+      margin-top:1px;
+      color:var(--muted);
+      font-weight:800;
+      line-height:1.1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .selectedFlags{
+      display:flex;
+      gap:4px;
+      margin-top:4px;
+      flex-wrap:wrap;
+    }
+
+    .teamsRow{
+      display:grid;
+      grid-template-columns:1fr auto 1fr;
+      align-items:center;
+      gap:5px;
+    }
+    .teamV{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+      min-width:0;
+    }
+    .teamVName{
+      font-weight:900;
+      line-height:1.05;
+      text-align:center;
+      min-height:2em;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+    }
+
+    .scoreCenter{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:2px;
+      min-width:0;
+    }
+    .scoreLine{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+      font-variant-numeric:tabular-nums;
+    }
+    .scorePiece{
+      display:inline-flex;
+      align-items:center;
+      gap:2px;
+    }
+    .scoreNum{
+      display:inline-block;
+      width:2ch;
+    }
+    .scoreNum.home{text-align:right}
+    .scoreNum.away{text-align:left}
+    .scoreDash{
+      display:inline-block;
+      width:1ch;
+      text-align:center;
+      opacity:.35;
+      font-weight:950;
+    }
+
+    .metaLine,
+    .serveLine{
+      color:var(--muted);
+      text-align:center;
+      font-weight:800;
+      line-height:1.05;
+    }
+    .serveLine{
+      text-transform:uppercase;
+      letter-spacing:.2px;
+      text-align:left;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      min-width:0;
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid rgba(59,130,246,.12);
+      background:rgba(59,130,246,.08);
+      color:#3b82f6;
+      font-weight:900;
+      text-transform:uppercase;
+      line-height:1;
+      text-align:center;
+      max-width:100%;
+    }
+    .tag.sideout{
+      background:rgba(59,130,246,.08);
+      border-color:rgba(59,130,246,.12);
+      color:#3b82f6;
+    }
+    .tag.break{
+      background:rgba(220,38,38,.08);
+      border-color:rgba(220,38,38,.12);
+      color:#dc2626;
+    }
+    .tag.breakStrong{
+      background:rgba(220,38,38,.12);
+      border-color:rgba(220,38,38,.16);
+      color:#ef4444;
+    }
+    body.dark .tag.break{ color:#fca5a5; }
+    body.dark .tag.breakStrong{ color:#fecaca; }
+
+    .actionsRow{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:5px;
+      align-items:center;
+      margin-top:6px;
+    }
+
+    .serveActionRow{
+      display:none;
+      grid-template-columns:1fr auto;
+      gap:6px;
+      align-items:center;
+      margin-top:5px;
+    }
+    .selectedCard.expanded .serveActionRow{
+      display:grid;
+    }
+
+    .dragHandle{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      min-width:0;
+      cursor:grab;
+      touch-action:none;
+      user-select:none;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .dragHandle:active{cursor:grabbing}
+    .grip{
+      display:inline-grid;
+      grid-template-columns:repeat(2,3px);
+      gap:2px;
+      opacity:.6;
+      flex:0 0 auto;
+    }
+    .grip span{
+      width:3px;
+      height:3px;
+      border-radius:999px;
+      background:currentColor;
+      display:block;
+    }
+
+    .setsRow{
+      display:none;
+      grid-template-columns:repeat(auto-fit,minmax(36px,1fr));
+      gap:3px;
+      margin-top:6px;
+      padding-top:6px;
+      border-top:1px solid var(--line);
+    }
+    .selectedCard.expanded .setsRow{
+      display:grid;
+    }
+
+    .setPill{
+      min-width:0;
+      background:var(--pill);
+      border:1px solid var(--line);
+      border-radius:8px;
+      text-align:center;
+    }
+    .setPill.active{
+      background:var(--pillActive);
+      border-color:rgba(96,165,250,.18);
+    }
+    .setLabel{
+      color:var(--muted);
+      font-weight:850;
+      line-height:1;
+      margin-bottom:2px;
+    }
+    .setScore{
+      font-weight:950;
+      line-height:1.05;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .scoreIcons{
+      display:inline-flex;
+      align-items:center;
+      gap:1px;
+      line-height:1;
+      font-size:10px;
+    }
+
+    @keyframes blinkPulse{0%,49%{opacity:1}50%,100%{opacity:.25}}
+    .iconBlink{animation:blinkPulse 1s infinite}
+
+    .card.dragging{
+      opacity:.66;
+      transform:scale(.99);
+      box-shadow:0 14px 28px rgba(2,6,23,.12);
+    }
+    .dropPlaceholder{
+      border:2px dashed rgba(96,165,250,.26);
+      border-radius:15px;
+      background:rgba(96,165,250,.06);
+      box-shadow:none;
+    }
+
+    .btn.danger.small{
+      min-height:28px;
+      padding:5px 10px;
+      font-size:9px;
+    }
+
+    .grid.selected.selected-1 .selectedCard{ padding:13px; }
+    .grid.selected.selected-1 .logoWrap{ width:54px; height:54px; }
+    .grid.selected.selected-1 .selectedTournament{ font-size:13px; }
+    .grid.selected.selected-1 .selectedMeta{ font-size:10px; }
+    .grid.selected.selected-1 .teamVName{ font-size:12px; }
+    .grid.selected.selected-1 .bigScore.detailSize{ font-size:28px; }
+    .grid.selected.selected-1 .metaLine,
+    .grid.selected.selected-1 .serveLine{ font-size:10px; }
+    .grid.selected.selected-1 .tag{ font-size:9px; padding:4px 9px; }
+    .grid.selected.selected-1 .dragHandle{ font-size:10px; }
+    .grid.selected.selected-1 .setLabel{ font-size:8px; }
+    .grid.selected.selected-1 .setScore{ font-size:11px; }
+    .grid.selected.selected-1 .setPill{ padding:5px 4px; }
+    .grid.selected.selected-1 .badge{ font-size:10px; }
+    .grid.selected.selected-1 .scoreIcons{ font-size:11px; }
+    .grid.selected.selected-1 .btn.danger.small{ font-size:10px; padding:6px 12px; min-height:30px; }
+
+    .grid.selected.selected-2 .selectedCard{ padding:11px; }
+    .grid.selected.selected-2 .logoWrap{ width:46px; height:46px; }
+    .grid.selected.selected-2 .selectedTournament{ font-size:11px; }
+    .grid.selected.selected-2 .selectedMeta{ font-size:9px; }
+    .grid.selected.selected-2 .teamVName{ font-size:11px; }
+    .grid.selected.selected-2 .bigScore.detailSize{ font-size:24px; }
+    .grid.selected.selected-2 .metaLine,
+    .grid.selected.selected-2 .serveLine{ font-size:9px; }
+    .grid.selected.selected-2 .tag{ font-size:8px; padding:4px 7px; }
+    .grid.selected.selected-2 .dragHandle{ font-size:9px; }
+    .grid.selected.selected-2 .setLabel{ font-size:8px; }
+    .grid.selected.selected-2 .setScore{ font-size:10px; }
+    .grid.selected.selected-2 .setPill{ padding:4px 3px; }
+    .grid.selected.selected-2 .scoreIcons{ font-size:10px; }
+
+    .grid.selected.selected-4 .selectedCard{ padding:8px; }
+    .grid.selected.selected-4 .logoWrap{ width:36px; height:36px; }
+    .grid.selected.selected-4 .selectedTournament{ font-size:9px; }
+    .grid.selected.selected-4 .selectedMeta{ font-size:8px; }
+    .grid.selected.selected-4 .teamVName{ font-size:9px; }
+    .grid.selected.selected-4 .bigScore.detailSize{ font-size:18px; }
+    .grid.selected.selected-4 .metaLine,
+    .grid.selected.selected-4 .serveLine{ font-size:8px; }
+    .grid.selected.selected-4 .tag{ font-size:7px; padding:2px 6px; }
+    .grid.selected.selected-4 .dragHandle{ font-size:8px; }
+    .grid.selected.selected-4 .setLabel{ font-size:7px; }
+    .grid.selected.selected-4 .setScore{ font-size:9px; }
+    .grid.selected.selected-4 .setPill{ padding:3px; }
+    .grid.selected.selected-4 .scoreIcons{ font-size:9px; }
+
+    .grid.selected.selected-6{ gap:6px; }
+    .grid.selected.selected-6 .selectedCard{ padding:7px; }
+    .grid.selected.selected-6 .selectedTop{ margin-bottom:5px; gap:5px; }
+    .grid.selected.selected-6 .teamsRow{ gap:4px; }
+    .grid.selected.selected-6 .teamV{ gap:3px; }
+    .grid.selected.selected-6 .logoWrap{ width:30px; height:30px; border-radius:10px; }
+    .grid.selected.selected-6 .selectedTournament{ font-size:9px; }
+    .grid.selected.selected-6 .selectedMeta{ font-size:7px; }
+    .grid.selected.selected-6 .teamVName{ font-size:9px; min-height:2em; }
+    .grid.selected.selected-6 .bigScore.detailSize{ font-size:16px; }
+    .grid.selected.selected-6 .metaLine,
+    .grid.selected.selected-6 .serveLine{ font-size:7px; }
+    .grid.selected.selected-6 .tag{ font-size:7px; padding:2px 5px; }
+    .grid.selected.selected-6 .actionsRow{ gap:5px; margin-top:5px; }
+    .grid.selected.selected-6 .serveActionRow{ gap:5px; margin-top:4px; }
+    .grid.selected.selected-6 .dragHandle{ font-size:8px; gap:4px; }
+    .grid.selected.selected-6 .setLabel{ font-size:6px; }
+    .grid.selected.selected-6 .setScore{ font-size:8px; }
+    .grid.selected.selected-6 .setPill{ padding:3px 2px; border-radius:8px; }
+    .grid.selected.selected-6 .setsRow{ gap:3px; margin-top:5px; padding-top:5px; }
+    .grid.selected.selected-6 .scoreIcons{ font-size:8px; gap:1px; }
+    .grid.selected.selected-6 .btn.danger.small{ font-size:8px; min-height:24px; padding:4px 8px; }
+
+    .grid.selected.selected-8plus{ gap:5px; }
+    .grid.selected.selected-8plus .selectedCard{ padding:6px; }
+    .grid.selected.selected-8plus .selectedTop{ margin-bottom:4px; gap:4px; }
+    .grid.selected.selected-8plus .teamsRow{ gap:4px; }
+    .grid.selected.selected-8plus .teamV{ gap:3px; }
+    .grid.selected.selected-8plus .logoWrap{ width:28px; height:28px; border-radius:9px; }
+    .grid.selected.selected-8plus .selectedTournament{ font-size:8px; }
+    .grid.selected.selected-8plus .selectedMeta{ font-size:7px; }
+    .grid.selected.selected-8plus .teamVName{ font-size:8px; min-height:2em; }
+    .grid.selected.selected-8plus .bigScore.detailSize{ font-size:15px; }
+    .grid.selected.selected-8plus .metaLine,
+    .grid.selected.selected-8plus .serveLine{ font-size:7px; }
+    .grid.selected.selected-8plus .tag{ font-size:6px; padding:2px 5px; }
+    .grid.selected.selected-8plus .actionsRow{ gap:4px; margin-top:4px; }
+    .grid.selected.selected-8plus .serveActionRow{ gap:4px; margin-top:4px; }
+    .grid.selected.selected-8plus .dragHandle{ font-size:7px; gap:4px; }
+    .grid.selected.selected-8plus .setLabel{ font-size:6px; }
+    .grid.selected.selected-8plus .setScore{ font-size:7px; }
+    .grid.selected.selected-8plus .setPill{ padding:2px; border-radius:8px; }
+    .grid.selected.selected-8plus .setsRow{ gap:3px; margin-top:4px; padding-top:4px; }
+    .grid.selected.selected-8plus .scoreIcons{ font-size:7px; gap:1px; }
+    .grid.selected.selected-8plus .btn.danger.small{ font-size:8px; min-height:22
