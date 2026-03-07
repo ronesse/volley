@@ -21,9 +21,6 @@
       --liveBg:#edf9f1;
       --liveBorder:rgba(34,197,94,.18);
 
-      --tabBg:rgba(255,255,255,.10);
-      --tabBorder:rgba(255,255,255,.16);
-
       --toggleBg:rgba(255,255,255,.10);
       --toggleBorder:rgba(255,255,255,.14);
 
@@ -36,6 +33,7 @@
       --abroadText:#b45309;
 
       --statusBg:#eef2f7;
+      --scoreBg:#f1f4f7;
     }
 
     body.dark{
@@ -53,9 +51,6 @@
       --liveBg:rgba(74,222,128,.12);
       --liveBorder:rgba(74,222,128,.16);
 
-      --tabBg:rgba(255,255,255,.07);
-      --tabBorder:rgba(255,255,255,.10);
-
       --toggleBg:rgba(255,255,255,.07);
       --toggleBorder:rgba(255,255,255,.10);
 
@@ -68,6 +63,7 @@
       --abroadText:#fbbf24;
 
       --statusBg:#303a49;
+      --scoreBg:#303a49;
     }
 
     *{box-sizing:border-box}
@@ -287,11 +283,15 @@
     }
 
     .centerCol{
-      min-width:82px;
+      min-width:92px;
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:4px;
+      background:var(--scoreBg);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:8px 6px;
     }
     .time{
       font-size:18px;
@@ -305,6 +305,12 @@
       font-weight:800;
       text-align:center;
       line-height:1.1;
+    }
+    .setLine{
+      font-size:11px;
+      font-weight:900;
+      line-height:1;
+      font-variant-numeric:tabular-nums;
     }
 
     .badges{
@@ -367,6 +373,9 @@
       }
       .time{
         font-size:16px;
+      }
+      .centerCol{
+        min-width:84px;
       }
     }
   </style>
@@ -517,7 +526,6 @@
 
     function getTodayRangeSeconds(){
       const now = new Date();
-
       const start = new Date(now);
       start.setHours(0,0,0,0);
 
@@ -578,14 +586,14 @@
         return new Date(n * 1000);
       }
 
-      const d = new Date(raw);
+      const normalized = String(raw).replace(" ", "T");
+      const d = new Date(normalized);
       if (Number.isNaN(d.getTime())) return null;
       return d;
     }
 
     function getEventState(event){
       const statusType = String(event.status_type || "").toLowerCase();
-      const statusCode = Number(event.status_code || 0);
 
       if (statusType === "inprogress") return "live";
       if (statusType === "finished") return "finished";
@@ -596,8 +604,6 @@
 
       const now = new Date();
       if (d > now) return "upcoming";
-
-      if (statusCode >= 100) return "finished";
       return "finished";
     }
 
@@ -651,7 +657,7 @@
 
       const league = document.createElement("div");
       league.className = "league";
-      league.textContent = event.tournament_name || event.widget_name || event.league_name || "Kamp";
+      league.textContent = event.tournament_name || "Kamp";
 
       const meta = document.createElement("div");
       meta.className = "meta";
@@ -686,10 +692,21 @@
 
       const center = document.createElement("div");
       center.className = "centerCol";
-      center.innerHTML = `
-        <div class="time">${formatTime(date)}</div>
-        <div class="dateLine">${formatDateLine(date)}</div>
-      `;
+
+      const time = document.createElement("div");
+      time.className = "time";
+      time.textContent = state === "live"
+        ? `${event.home_sets ?? 0}-${event.away_sets ?? 0}`
+        : formatTime(date);
+
+      const dateLine = document.createElement("div");
+      dateLine.className = "dateLine";
+      dateLine.textContent = state === "live"
+        ? (event.status_desc || "LIVE")
+        : formatDateLine(date);
+
+      center.appendChild(time);
+      center.appendChild(dateLine);
 
       const away = document.createElement("div");
       away.className = "team";
