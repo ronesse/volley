@@ -266,6 +266,33 @@
       min-width:0;
       text-align:center;
     }
+    .teamLogoWrap{
+      width:42px;
+      height:42px;
+      margin:0 auto 6px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:var(--card2);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .teamLogoWrap img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      padding:4px;
+    }
+    .teamLogoFallback{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      font-size:11px;
+      font-weight:900;
+      color:var(--muted);
+    }
     .teamName{
       font-size:12px;
       font-weight:900;
@@ -358,6 +385,12 @@
       .teamName{ font-size:11px; }
       .time{ font-size:16px; }
       .centerCol{ min-width:84px; }
+      .teamLogoWrap{
+        width:36px;
+        height:36px;
+        margin-bottom:5px;
+        border-radius:10px;
+      }
     }
   </style>
 </head>
@@ -419,6 +452,7 @@
   <script>
     const TEAMS_API_URL = "https://volleyball.ronesse.no/teams?limit=200&offset=0";
     const EVENTS_API_BASE = "https://volleyball.ronesse.no/events";
+    const TEAM_LOGO_BASE = "https://volleyball.ronesse.no/img/teams";
     const THEME_KEY = "volley_theme_v1";
 
     let favoriteSofaTeamIds = new Set();
@@ -500,7 +534,8 @@
           name: team.name || "",
           country: team.country || "",
           league: team.league || "",
-          groupType: group
+          groupType: group,
+          logo: team.logo || ""
         });
       }
 
@@ -648,6 +683,31 @@
       return countries.join(" · ");
     }
 
+    function teamLogoUrl(teamId){
+      return `${TEAM_LOGO_BASE}/${teamId}.png`;
+    }
+
+    function createTeamLogo(teamId, fallbackText = ""){
+      const wrap = document.createElement("div");
+      wrap.className = "teamLogoWrap";
+
+      const img = document.createElement("img");
+      img.alt = "Laglogo";
+      img.loading = "lazy";
+      img.src = teamLogoUrl(teamId);
+
+      img.onerror = () => {
+        wrap.innerHTML = "";
+        const fb = document.createElement("div");
+        fb.className = "teamLogoFallback";
+        fb.textContent = fallbackText;
+        wrap.appendChild(fb);
+      };
+
+      wrap.appendChild(img);
+      return wrap;
+    }
+
     function renderCard(event){
       const card = document.createElement("div");
       card.className = "card";
@@ -692,10 +752,11 @@
 
       const home = document.createElement("div");
       home.className = "team";
-      home.innerHTML = `
+      home.appendChild(createTeamLogo(event.home_team_id, "H"));
+      home.insertAdjacentHTML("beforeend", `
         <div class="teamName">${event.home_team_name || "Hjemmelag"}</div>
         <div class="teamCountry">${getTeamCountryText(event.home_team_id)}</div>
-      `;
+      `);
 
       const center = document.createElement("div");
       center.className = "centerCol";
@@ -717,10 +778,11 @@
 
       const away = document.createElement("div");
       away.className = "team";
-      away.innerHTML = `
+      away.appendChild(createTeamLogo(event.away_team_id, "B"));
+      away.insertAdjacentHTML("beforeend", `
         <div class="teamName">${event.away_team_name || "Bortelag"}</div>
         <div class="teamCountry">${getTeamCountryText(event.away_team_id)}</div>
-      `;
+      `);
 
       matchRow.appendChild(home);
       matchRow.appendChild(center);
