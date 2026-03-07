@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<title>Live volleyball</title>
+
+<style>
+
+:root{
+--bgTop:#243048;
+--bg:#edf1f5;
+--card:#f7f8fa;
+--card2:#f2f4f7;
+--text:#1f2937;
+--muted:#6b7280;
+--line:rgba(31,41,55,.08);
+--live:#22c55e;
+}
+
+body.dark{
+--bgTop:#1f2937;
+--bg:#2b3442;
+--card:#364152;
+--card2:#313b4b;
+--text:#e7ebf1;
+--muted:#b3bdc9;
+--line:rgba(255,255,255,.08);
+--live:#4ade80;
+}
+
+*{box-sizing:border-box}
+
+body{
+margin:0;
+font-family:system-ui;
+background:linear-gradient(180deg,var(--bgTop) 0,var(--bgTop) 100px,var(--bg) 100%);
+color:var(--text);
+}
+
+header{
+max-width:900px;
+margin:auto;
+padding:12px;
+color:white;
+}
+
+.topBar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+h1{
+margin:0;
+font-size:18px;
+}
+
+.headerButtons{
+display:flex;
+gap:6px;
+}
+
+.themeBtn,.linkBtn{
+border:none;
+border-radius:20px;
+padding:6px 10px;
+font-size:12px;
+cursor:pointer;
+background:rgba(255,255,255,.15);
+color:white;
+}
+
+.tabs{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
+margin-top:10px;
+}
+
+.tab{
+border:none;
+padding:8px;
+border-radius:30px;
+font-weight:700;
+cursor:pointer;
+background:rgba(255,255,255,.2);
+color:white;
+}
+
+.tab.active{
+background:white;
+color:#111;
+}
+
+main{
+max-width:900px;
+margin:auto;
+padding:10px;
+}
+
+.grid{
+display:grid;
+gap:8px;
+grid-template-columns:repeat(2,1fr);
+}
+
+.card{
+background:var(--card);
+border:1px solid var(--line);
+border-radius:14px;
+padding:8px;
+cursor:pointer;
+}
+
+.league{
+font-size:9px;
+color:var(--muted);
+text-align:center;
+margin-bottom:6px;
+}
+
+.match{
+display:grid;
+grid-template-columns:1fr auto 1fr;
+align-items:center;
+gap:6px;
+}
+
+.team{
+text-align:center;
+}
+
+.logo{
+width:32px;
+height:32px;
+margin:auto;
+margin-bottom:4px;
+border-radius:8px;
+background:var(--card2);
+border:1px solid var(--line);
+display:grid;
+place-items:center;
+overflow:hidden;
+}
+
+.logo img{
+width:100%;
+height:100%;
+object-fit:contain;
+}
+
+.name{
+font-size:10px;
+font-weight:700;
+}
+
+.score{
+font-size:18px;
+font-weight:900;
+text-align:center;
+}
+
+.status{
+text-align:center;
+font-size:9px;
+color:var(--muted);
+margin-top:4px;
+}
+
+.actions{
+display:flex;
+justify-content:space-between;
+margin-top:6px;
+}
+
+.btn{
+font-size:9px;
+border-radius:20px;
+padding:4px 10px;
+border:1px solid var(--line);
+background:var(--card2);
+cursor:pointer;
+}
+
+.btn.danger{
+background:#f3e8e8;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="topBar">
+
+<h1>Live volleyball</h1>
+
+<div class="headerButtons">
+
+<a href="dagens_kamper.html">
+<button class="linkBtn">📅 Dagens</button>
+</a>
+
+<button id="themeToggle" class="themeBtn">🌙</button>
+
+</div>
+
+</div>
+
+<div class="tabs">
+
+<button id="tabSelected" class="tab active">Valgte</button>
+<button id="tabAll" class="tab">Alle</button>
+
+</div>
+
+</header>
+
+<main>
+
+<div id="grid" class="grid"></div>
+
+</main>
+
+<script>
+
+const LIVE_API="https://volleyball.ronesse.no/live"
+const TEAMS_API="https://volleyball.ronesse.no/teams?limit=200&offset=0"
+
+const TEAM_LOGO=id=>`https://volleyball.ronesse.no/img/teams/${id}.png`
+
+let liveMatches=[]
+let favoriteTeamIds=new Set()
+
+let followed=JSON.parse(localStorage.getItem("followed")||"[]")
+let hiddenAuto=new Set(JSON.parse(localStorage.getItem("hiddenAuto")||"[]"))
+
+let startedMatches=new Set()
+
+let currentTab="selected"
+
+function saveFollowed(){
+localStorage.setItem("followed",JSON.stringify(followed))
+}
+
+function saveHidden(){
+localStorage.setItem("hiddenAuto",JSON.stringify([...hiddenAuto]))
+}
+
+async function fetchLive(){
+const r=await fetch(LIVE_API)
+return await r.json()
+}
+
+async function fetchTeams(){
+
+const teams=await (await fetch(TEAMS_API)).json()
+
+favoriteTeamIds=new Set(
+
+teams
+.filter(t=>t.group_type==="mizuno"||t.group_type==="abroad")
+.map(t=>String(t.sofascore_team_id))
+
+)
+
+}
+
+function isFavoriteMatch(m){
+
+return favoriteTeamIds.has(String(m.home_team_id))||
+favoriteTeamIds.has(String(m.away_team_id))
+
+}
+
+function vibrate(){
+if(navigator.vibrate)navigator.vibrate([120,60,120])
+}
+
+function checkStartAlerts(matches){
+
+for(const m of matches){
+
+const id=String(m.event_id)
+
+if(!startedMatches.has(id)&&isFavoriteMatch(m)){
+startedMatches.add(id)
+vibrate()
+}
+
+}
+
+}
+
+function createLogo(teamId){
+
+const wrap=document.createElement("div")
+wrap.className="logo"
+
+const img=document.createElement("img")
+img.src=TEAM_LOGO(teamId)
+
+img.onerror=()=>wrap.innerHTML=""
+
+wrap.appendChild(img)
+
+return wrap
+}
+
+function renderCard(m){
+
+const id=String(m.event_id)
+
+const card=document.createElement("div")
+card.className="card"
+
+const auto=isFavoriteMatch(m)
+const manual=followed.includes(id)
+
+const league=m.tournament_name||""
+
+const score=`${m.home_sets??0}-${m.away_sets??0}`
+
+card.innerHTML=`<div class="league">${league}</div>`
+
+const match=document.createElement("div")
+match.className="match"
+
+const home=document.createElement("div")
+home.className="team"
+home.appendChild(createLogo(m.home_team_id))
+home.innerHTML+=`<div class="name">${m.home_team_name}</div>`
+
+const center=document.createElement("div")
+center.innerHTML=`<div class="score">${score}</div>`
+
+const away=document.createElement("div")
+away.className="team"
+away.appendChild(createLogo(m.away_team_id))
+away.innerHTML+=`<div class="name">${m.away_team_name}</div>`
+
+match.appendChild(home)
+match.appendChild(center)
+match.appendChild(away)
+
+card.appendChild(match)
+
+const status=document.createElement("div")
+status.className="status"
+status.textContent=m.status_desc||""
+card.appendChild(status)
+
+const actions=document.createElement("div")
+actions.className="actions"
+
+const drag=document.createElement("button")
+drag.className="btn"
+drag.textContent="Dra"
+
+const stop=document.createElement("button")
+stop.className="btn danger"
+
+if(manual){
+stop.textContent="Slutt"
+stop.onclick=e=>{
+e.stopPropagation()
+followed=followed.filter(x=>x!==id)
+saveFollowed()
+render()
+}
+}else if(auto){
+stop.textContent="Skjul"
+stop.onclick=e=>{
+e.stopPropagation()
+hiddenAuto.add(id)
+saveHidden()
+render()
+}
+}else{
+stop.textContent="Følg"
+stop.onclick=e=>{
+e.stopPropagation()
+followed.push(id)
+saveFollowed()
+render()
+}
+}
+
+actions.appendChild(drag)
+actions.appendChild(stop)
+
+card.appendChild(actions)
+
+return card
+}
+
+function render(){
+
+const grid=document.getElementById("grid")
+grid.innerHTML=""
+
+const live=liveMatches.filter(m=>m.status_type==="inprogress")
+
+let matches=[]
+
+if(currentTab==="all"){
+
+matches=live
+
+}else{
+
+const manual=live.filter(m=>followed.includes(String(m.event_id)))
+
+const auto=live.filter(m=>
+isFavoriteMatch(m)
+&&!followed.includes(String(m.event_id))
+&&!hiddenAuto.has(String(m.event_id))
+)
+
+const map=new Map()
+
+manual.concat(auto).forEach(m=>map.set(m.event_id,m))
+
+matches=[...map.values()]
+
+}
+
+matches.forEach(m=>grid.appendChild(renderCard(m)))
+
+}
+
+async function refresh(){
+
+liveMatches=await fetchLive()
+
+checkStartAlerts(liveMatches)
+
+render()
+
+}
+
+document.getElementById("tabAll").onclick=()=>{
+
+currentTab="all"
+
+document.getElementById("tabAll").classList.add("active")
+document.getElementById("tabSelected").classList.remove("active")
+
+render()
+
+}
+
+document.getElementById("tabSelected").onclick=()=>{
+
+currentTab="selected"
+
+document.getElementById("tabSelected").classList.add("active")
+document.getElementById("tabAll").classList.remove("active")
+
+render()
+
+}
+
+document.getElementById("themeToggle").onclick=()=>{
+
+document.body.classList.toggle("dark")
+
+document.getElementById("themeToggle").textContent=
+document.body.classList.contains("dark")?"☀️":"🌙"
+
+}
+
+async function init(){
+
+await fetchTeams()
+
+await refresh()
+
+setInterval(refresh,10000)
+
+}
+
+init()
+
+</script>
+
+</body>
+</html>
