@@ -306,12 +306,6 @@
       text-align:center;
       line-height:1.1;
     }
-    .setLine{
-      font-size:11px;
-      font-weight:900;
-      line-height:1;
-      font-variant-numeric:tabular-nums;
-    }
 
     .badges{
       display:flex;
@@ -359,24 +353,11 @@
     }
 
     @media (max-width:420px){
-      .summaryBar{
-        grid-template-columns:1fr 1fr 1fr;
-      }
-      .summaryValue{
-        font-size:18px;
-      }
-      .card{
-        padding:9px;
-      }
-      .teamName{
-        font-size:11px;
-      }
-      .time{
-        font-size:16px;
-      }
-      .centerCol{
-        min-width:84px;
-      }
+      .summaryValue{ font-size:18px; }
+      .card{ padding:9px; }
+      .teamName{ font-size:11px; }
+      .time{ font-size:16px; }
+      .centerCol{ min-width:84px; }
     }
   </style>
 </head>
@@ -385,7 +366,7 @@
     <div class="headRow">
       <div class="headLeft">
         <h1>Dagens kamper</h1>
-        <p class="sub">Kun kamper for lag som finnes i /teams (mizuno + abroad)</p>
+        <p class="sub">Kun kamper der teams.sofascore_team_id matcher events.home_team_id eller away_team_id</p>
       </div>
       <div class="headRight">
         <button id="themeToggle" class="themeToggle" type="button" aria-label="Bytt tema" title="Bytt dag/natt">🌙</button>
@@ -440,22 +421,17 @@
     const EVENTS_API_BASE = "https://volleyball.ronesse.no/events";
     const THEME_KEY = "volley_theme_v1";
 
-    let favoriteTeamIds = new Set();
-    let favoriteTeamMeta = new Map();
+    let favoriteSofaTeamIds = new Set();
+    let favoriteTeamMetaBySofaId = new Map();
     let todayMatches = [];
 
     function loadTheme(){
-      try{
-        return localStorage.getItem(THEME_KEY) || "";
-      } catch {
-        return "";
-      }
+      try { return localStorage.getItem(THEME_KEY) || ""; }
+      catch { return ""; }
     }
 
     function saveTheme(theme){
-      try{
-        localStorage.setItem(THEME_KEY, theme);
-      } catch {}
+      try { localStorage.setItem(THEME_KEY, theme); } catch {}
     }
 
     function applyTheme(theme){
@@ -463,8 +439,8 @@
       document.body.classList.toggle("dark", dark);
       const btn = document.getElementById("themeToggle");
       btn.textContent = dark ? "☀️" : "🌙";
-      btn.setAttribute("title", dark ? "Bytt til dagmodus" : "Bytt til nattmodus");
-      btn.setAttribute("aria-label", dark ? "Bytt til dagmodus" : "Bytt til nattmodus");
+      btn.title = dark ? "Bytt til dagmodus" : "Bytt til nattmodus";
+      btn.setAttribute("aria-label", btn.title);
     }
 
     function initTheme(){
@@ -507,28 +483,35 @@
 
       for (const team of teams){
         const group = String(team.group_type || "").toLowerCase();
-        if (group === "mizuno" || group === "abroad"){
-          const id = String(team.id);
-          ids.add(id);
-          meta.set(id, {
-            id,
-            name: team.name || "",
-            country: team.country || "",
-            league: team.league || "",
-            groupType: group
-          });
+        const sofaId = String(team.sofascore_team_id ?? "").trim();
+
+        if (!sofaId) continue;
+        if (group !== "mizuno" && group !== "abroad") continue;
+
+        ids.add(sofaId);
+
+        if (!meta.has(sofaId)){
+          meta.set(sofaId, []);
         }
+
+        meta.get(sofaId).push({
+          sofaId,
+          internalId: String(team.id ?? ""),
+          name: team.name || "",
+          country: team.country || "",
+          league: team.league || "",
+          groupType: group
+        });
       }
 
-      favoriteTeamIds = ids;
-      favoriteTeamMeta = meta;
+      favoriteSofaTeamIds = ids;
+      favoriteTeamMetaBySofaId = meta;
     }
 
     function getTodayRangeSeconds(){
       const now = new Date();
       const start = new Date(now);
       start.setHours(0,0,0,0);
-
       const end = new Date(now);
       end.setHours(23,59,59,999);
 
@@ -550,46 +533,18 @@
       return Array.isArray(data) ? data : [];
     }
 
-    function isFavoriteEvent(event){
-      const homeId = String(event.home_team_id ?? "");
-      const awayId = String(event.away_team_id ?? "");
-      return favoriteTeamIds.has(homeId) || favoriteTeamIds.has(awayId);
-    }
-
-    function enrichEvent(event){
-      const homeId = String(event.home_team_id ?? "");
-      const awayId = String(event.away_team_id ?? "");
-
-      const badges = [];
-      if (favoriteTeamMeta.has(homeId)) badges.push(favoriteTeamMeta.get(homeId).groupType);
-      if (favoriteTeamMeta.has(awayId)) badges.push(favoriteTeamMeta.get(awayId).groupType);
-
-      return {
-        ...event,
-        badges: [...new Set(badges)]
-      };
-    }
-
     function getEventDate(event){
-      const raw = event.start_utc || event.start_time || event.start || event.start_ts;
-      if (raw == null) return null;
-
-      if (typeof raw === "number"){
-        const n = Number(raw);
-        if (n > 1000000000000) return new Date(n);
-        return new Date(n * 1000);
+      if (event.start_ts != null){
+        const n = Number(event.start_ts);
+        if (!Number.isNaN(n)) return new Date(n * 1000);
       }
 
-      if (typeof raw === "string" && /^\d+$/.test(raw)){
-        const n = Number(raw);
-        if (n > 1000000000000) return new Date(n);
-        return new Date(n * 1000);
+      if (event.start_utc){
+        const d = new Date(String(event.start_utc).replace(" ", "T"));
+        if (!Number.isNaN(d.getTime())) return d;
       }
 
-      const normalized = String(raw).replace(" ", "T");
-      const d = new Date(normalized);
-      if (Number.isNaN(d.getTime())) return null;
-      return d;
+      return null;
     }
 
     function getEventState(event){
@@ -601,10 +556,56 @@
 
       const d = getEventDate(event);
       if (!d) return "upcoming";
+      return d > new Date() ? "upcoming" : "finished";
+    }
 
-      const now = new Date();
-      if (d > now) return "upcoming";
-      return "finished";
+    function isFavoriteEvent(event){
+      const homeId = String(event.home_team_id ?? "");
+      const awayId = String(event.away_team_id ?? "");
+      return favoriteSofaTeamIds.has(homeId) || favoriteSofaTeamIds.has(awayId);
+    }
+
+    function enrichEvent(event){
+      const homeId = String(event.home_team_id ?? "");
+      const awayId = String(event.away_team_id ?? "");
+
+      const linkedTeams = [];
+      const badges = new Set();
+
+      if (favoriteTeamMetaBySofaId.has(homeId)){
+        for (const item of favoriteTeamMetaBySofaId.get(homeId)){
+          linkedTeams.push(item);
+          badges.add(item.groupType);
+        }
+      }
+
+      if (favoriteTeamMetaBySofaId.has(awayId)){
+        for (const item of favoriteTeamMetaBySofaId.get(awayId)){
+          linkedTeams.push(item);
+          badges.add(item.groupType);
+        }
+      }
+
+      return {
+        ...event,
+        linkedTeams,
+        badges: Array.from(badges)
+      };
+    }
+
+    function dedupeEventsById(events){
+      const seen = new Set();
+      const out = [];
+
+      for (const event of events){
+        const id = String(event.event_id ?? "");
+        if (!id) continue;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        out.push(event);
+      }
+
+      return out;
     }
 
     function formatTime(date){
@@ -639,6 +640,12 @@
       badge.className = `badge ${text}`;
       badge.textContent = text;
       return badge;
+    }
+
+    function getTeamCountryText(eventSideId){
+      const arr = favoriteTeamMetaBySofaId.get(String(eventSideId)) || [];
+      const countries = [...new Set(arr.map(x => x.country).filter(Boolean))];
+      return countries.join(" · ");
     }
 
     function renderCard(event){
@@ -687,7 +694,7 @@
       home.className = "team";
       home.innerHTML = `
         <div class="teamName">${event.home_team_name || "Hjemmelag"}</div>
-        <div class="teamCountry">${favoriteTeamMeta.get(String(event.home_team_id || ""))?.country || ""}</div>
+        <div class="teamCountry">${getTeamCountryText(event.home_team_id)}</div>
       `;
 
       const center = document.createElement("div");
@@ -712,7 +719,7 @@
       away.className = "team";
       away.innerHTML = `
         <div class="teamName">${event.away_team_name || "Bortelag"}</div>
-        <div class="teamCountry">${favoriteTeamMeta.get(String(event.away_team_id || ""))?.country || ""}</div>
+        <div class="teamCountry">${getTeamCountryText(event.away_team_id)}</div>
       `;
 
       matchRow.appendChild(home);
@@ -789,9 +796,11 @@
 
         buildFavoriteTeams(teams);
 
-        todayMatches = events
-          .filter(isFavoriteEvent)
-          .map(enrichEvent);
+        todayMatches = dedupeEventsById(
+          events
+            .filter(isFavoriteEvent)
+            .map(enrichEvent)
+        );
 
         renderAll();
 
@@ -803,10 +812,9 @@
           })}`
         );
       } catch (err) {
-        const containers = ["liveGrid", "upcomingGrid", "finishedGrid"];
-        for (const id of containers){
-          const el = document.getElementById(id);
-          el.innerHTML = `<div class="empty">Kunne ikke hente dagens kamper (${err.message}).</div>`;
+        for (const id of ["liveGrid", "upcomingGrid", "finishedGrid"]){
+          document.getElementById(id).innerHTML =
+            `<div class="empty">Kunne ikke hente dagens kamper (${err.message}).</div>`;
         }
         document.getElementById("summaryLive").textContent = "0";
         document.getElementById("summaryUpcoming").textContent = "0";
