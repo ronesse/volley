@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<title>Live volleyball</title>
+
+<style>
+
+:root{
+
+--bgTop:#26344b;
+--bg:#edf1f5;
+--card:#f7f8fa;
+--card2:#f2f4f7;
+
+--text:#1f2937;
+--muted:#6b7280;
+
+--line:rgba(31,41,55,.08);
+--shadow:0 6px 16px rgba(0,0,0,.05);
+
+--live:#22c55e;
+
+}
+
+body.dark{
+
+--bgTop:#1f2937;
+--bg:#2b3442;
+--card:#364152;
+--card2:#313b4b;
+
+--text:#e7ebf1;
+--muted:#b3bdc9;
+
+--line:rgba(255,255,255,.08);
+
+--shadow:0 6px 16px rgba(0,0,0,.18);
+
+}
+
+*{box-sizing:border-box}
+
+body{
+margin:0;
+font-family:system-ui,-apple-system,Segoe UI,Roboto;
+
+background:linear-gradient(180deg,var(--bgTop) 0,var(--bgTop) 100px,var(--bg) 100%);
+color:var(--text);
+}
+
+header{
+max-width:850px;
+margin:auto;
+padding:12px;
+color:white;
+}
+
+h1{
+margin:0;
+font-size:16px;
+}
+
+.tabs{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:8px;
+margin-top:10px;
+}
+
+.tab{
+background:rgba(255,255,255,.1);
+border:1px solid rgba(255,255,255,.2);
+color:white;
+padding:9px;
+border-radius:30px;
+font-weight:700;
+cursor:pointer;
+}
+
+.tab.active{
+background:white;
+color:#111;
+}
+
+main{
+max-width:850px;
+margin:auto;
+padding:10px;
+}
+
+.grid{
+display:grid;
+gap:8px;
+}
+
+.grid.all{
+grid-template-columns:repeat(2,1fr);
+}
+
+.grid.selected{
+grid-template-columns:repeat(2,1fr);
+}
+
+.card{
+background:var(--card);
+border:1px solid var(--line);
+border-radius:14px;
+padding:8px;
+box-shadow:var(--shadow);
+}
+
+.selectedCard{
+cursor:pointer;
+}
+
+.team{
+text-align:center;
+font-weight:700;
+font-size:10px;
+}
+
+.score{
+text-align:center;
+font-size:18px;
+font-weight:900;
+}
+
+.meta{
+text-align:center;
+font-size:9px;
+color:var(--muted);
+}
+
+.actions{
+display:flex;
+justify-content:space-between;
+margin-top:6px;
+}
+
+.btn{
+border-radius:20px;
+border:1px solid var(--line);
+padding:4px 10px;
+font-size:9px;
+cursor:pointer;
+background:var(--card2);
+}
+
+.btn.danger{
+background:#f3e8e8;
+}
+
+.sets{
+display:none;
+margin-top:6px;
+border-top:1px solid var(--line);
+padding-top:6px;
+font-size:9px;
+}
+
+.selectedCard.expanded .sets{
+display:block;
+}
+
+.themeToggle{
+position:absolute;
+right:12px;
+top:12px;
+width:36px;
+height:36px;
+border-radius:50%;
+border:none;
+cursor:pointer;
+font-size:16px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<button id="themeToggle" class="themeToggle">🌙</button>
+
+<h1>Live volleyball</h1>
+
+<div class="tabs">
+<button id="tabSelected" class="tab active">Valgte</button>
+<button id="tabAll" class="tab">Alle</button>
+</div>
+
+</header>
+
+<main>
+
+<div id="grid" class="grid selected"></div>
+
+</main>
+
+<script>
+
+const LIVE_API="https://volleyball.ronesse.no/live"
+const TEAMS_API="https://volleyball.ronesse.no/teams?limit=200&offset=0"
+
+let liveMatches=[]
+let favoriteTeamIds=new Set()
+
+let startedMatches=new Set()
+
+let followedOrder=JSON.parse(localStorage.getItem("followed")||"[]")
+
+let currentTab="selected"
+
+function saveFollowed(){
+localStorage.setItem("followed",JSON.stringify(followedOrder))
+}
+
+async function fetchLive(){
+
+const r=await fetch(LIVE_API)
+return await r.json()
+
+}
+
+async function fetchTeams(){
+
+const r=await fetch(TEAMS_API)
+const teams=await r.json()
+
+favoriteTeamIds=new Set(
+
+teams
+.filter(t=>t.group_type==="mizuno"||t.group_type==="abroad")
+.map(t=>String(t.id))
+
+)
+
+}
+
+function isFavoriteMatch(m){
+
+return favoriteTeamIds.has(String(m.home_team_id)) ||
+favoriteTeamIds.has(String(m.away_team_id))
+
+}
+
+function vibrate(){
+
+if(navigator.vibrate){
+
+navigator.vibrate([120,60,120])
+
+}
+
+}
+
+function checkStartAlerts(matches){
+
+for(const m of matches){
+
+const id=String(m.event_id)
+
+if(!startedMatches.has(id) && isFavoriteMatch(m)){
+
+startedMatches.add(id)
+
+vibrate()
+
+}
+
+}
+
+}
+
+function render(){
+
+const grid=document.getElementById("grid")
+
+grid.innerHTML=""
+
+const inprogress=liveMatches.filter(m=>m.status_type==="inprogress")
+
+let matches=[]
+
+if(currentTab==="all"){
+
+matches=inprogress
+
+}else{
+
+const manual=inprogress.filter(m=>followedOrder.includes(String(m.event_id)))
+
+const auto=inprogress.filter(m=>isFavoriteMatch(m) && !followedOrder.includes(String(m.event_id)))
+
+matches=[...manual,...auto]
+
+}
+
+matches.forEach(m=>{
+
+grid.appendChild(renderCard(m))
+
+})
+
+}
+
+function renderCard(m){
+
+const id=String(m.event_id)
+
+const card=document.createElement("div")
+card.className="card selectedCard"
+
+card.onclick=()=>{
+
+card.classList.toggle("expanded")
+
+}
+
+const home=m.home_team_name
+const away=m.away_team_name
+
+const hs=m.home_sets||0
+const as=m.away_sets||0
+
+const set=1
+
+const hp=m.home_p1||0
+const ap=m.away_p1||0
+
+card.innerHTML=`
+
+<div class="team">${home}</div>
+
+<div class="score">${hp} - ${ap}</div>
+
+<div class="team">${away}</div>
+
+<div class="meta">${hs}-${as}</div>
+
+<div class="actions">
+
+<button class="btn">Dra</button>
+
+<button class="btn danger">Slutt</button>
+
+</div>
+
+<div class="sets">
+
+Serve info og settstatistikk
+
+</div>
+
+`
+
+return card
+
+}
+
+async function refresh(){
+
+liveMatches=await fetchLive()
+
+checkStartAlerts(liveMatches)
+
+render()
+
+}
+
+document.getElementById("tabAll").onclick=()=>{
+
+currentTab="all"
+
+document.getElementById("tabAll").classList.add("active")
+document.getElementById("tabSelected").classList.remove("active")
+
+document.getElementById("grid").className="grid all"
+
+render()
+
+}
+
+document.getElementById("tabSelected").onclick=()=>{
+
+currentTab="selected"
+
+document.getElementById("tabSelected").classList.add("active")
+document.getElementById("tabAll").classList.remove("active")
+
+document.getElementById("grid").className="grid selected"
+
+render()
+
+}
+
+document.getElementById("themeToggle").onclick=()=>{
+
+document.body.classList.toggle("dark")
+
+document.getElementById("themeToggle").textContent=
+document.body.classList.contains("dark")?"☀️":"🌙"
+
+}
+
+async function init(){
+
+await fetchTeams()
+
+await refresh()
+
+setInterval(refresh,10000)
+
+}
+
+init()
+
+</script>
+
+</body>
+</html>
