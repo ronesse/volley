@@ -21,7 +21,6 @@
       --live:#22c55e;
       --liveBg:#edf9f1;
       --liveBorder:rgba(34,197,94,.18);
-      --link:#2563eb;
     }
 
     body.dark{
@@ -40,7 +39,6 @@
       --live:#4ade80;
       --liveBg:rgba(74,222,128,.12);
       --liveBorder:rgba(74,222,128,.16);
-      --link:#93c5fd;
     }
 
     *{box-sizing:border-box}
@@ -64,6 +62,7 @@
       align-items:flex-start;
       gap:10px;
     }
+
     .headButtons{
       display:flex;
       gap:6px;
@@ -165,6 +164,27 @@
       font-weight:800;
     }
 
+    .section{
+      margin-top:14px;
+    }
+    .sectionTitle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin:0 0 8px;
+    }
+    .sectionTitle h2{
+      margin:0;
+      font-size:14px;
+      font-weight:900;
+    }
+    .sectionCount{
+      color:var(--muted);
+      font-size:11px;
+      font-weight:800;
+    }
+
     .list{
       display:grid;
       gap:8px;
@@ -224,7 +244,7 @@
       line-height:1.15;
     }
     .centerBox{
-      min-width:92px;
+      min-width:104px;
       background:var(--pillBg);
       border:1px solid var(--line);
       border-radius:12px;
@@ -280,7 +300,23 @@
 
   <main>
     <div id="teamHeader" class="teamHeader" style="display:none"></div>
-    <div id="list" class="list"></div>
+
+    <section class="section">
+      <div class="sectionTitle">
+        <h2>Kommende kamper</h2>
+        <div id="countUpcoming" class="sectionCount">0 kamper</div>
+      </div>
+      <div id="upcomingList" class="list"></div>
+    </section>
+
+    <section class="section">
+      <div class="sectionTitle">
+        <h2>Tidligere kamper</h2>
+        <div id="countPast" class="sectionCount">0 kamper</div>
+      </div>
+      <div id="pastList" class="list"></div>
+    </section>
+
     <div id="empty" class="empty" style="display:none"></div>
   </main>
 
@@ -306,8 +342,7 @@
     function applyTheme(theme){
       const dark = theme === "dark";
       document.body.classList.toggle("dark", dark);
-      const btn = document.getElementById("themeToggle");
-      btn.textContent = dark ? "☀️" : "🌙";
+      document.getElementById("themeToggle").textContent = dark ? "☀️" : "🌙";
     }
 
     function initTheme(){
@@ -418,8 +453,9 @@
         <div class="meta">${event.season_name || ""}${event.round ? ` · Runde ${event.round}` : ""}</div>
       `;
 
+      const type = String(event.status_type || "").toLowerCase();
       const status = document.createElement("div");
-      status.className = "status" + (String(event.status_type || "").toLowerCase() === "inprogress" ? " live" : "");
+      status.className = "status" + (type === "inprogress" ? " live" : "");
       status.textContent = getStatusText(event);
 
       top.appendChild(left);
@@ -435,7 +471,6 @@
       const center = document.createElement("div");
       center.className = "centerBox";
 
-      const type = String(event.status_type || "").toLowerCase();
       if (type === "finished" || type === "inprogress"){
         center.innerHTML = `
           <div class="score">${event.home_sets ?? 0}-${event.away_sets ?? 0}</div>
@@ -461,6 +496,37 @@
       return card;
     }
 
+    async function fetchAllTeamEvents(sofaTeamId){
+      const all = [];
+      let offset = 0;
+      const limit = 1000;
+
+      while (true){
+        const url = new URL(EVENTS_API_BASE);
+        url.searchParams.set("team_id", String(sofaTeamId));
+        url.searchParams.set("limit", String(limit));
+        url.searchParams.set("offset", String(offset));
+
+        const batch = await getJson(url.toString());
+        const rows = Array.isArray(batch) ? batch : [];
+
+        all.push(...rows);
+
+        if (rows.length < limit) break;
+        offset += limit;
+
+        if (offset > 5000) break;
+      }
+
+      const seen = new Set();
+      return all.filter(ev => {
+        const id = String(ev.event_id ?? "");
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    }
+
     async function refresh(){
       const teamId = qs("team_id");
       if (!teamId){
@@ -481,39 +547,55 @@
 
         renderTeamHeader(team);
 
-        const now = new Date();
-        const from = new Date(now);
-        from.setFullYear(from.getFullYear() - 1);
+        const sofaTeamId = String(team.sofascore_team_id ?? "").trim();
+        const events = await fetchAllTeamEvents(sofaTeamId);
 
-        const to = new Date(now);
-        to.setFullYear(to.getFullYear() + 1);
+        const sorted = events.sort((a, b) => Number(a.start_ts || 0) - Number(b.start_ts || 0));
+        const now = Date.now();
 
-        const url = new URL(EVENTS_API_BASE);
-        url.searchParams.set("from_ts", String(Math.floor(from.getTime() / 1000)));
-        url.searchParams.set("to_ts", String(Math.floor(to.getTime() / 1000)));
-        url.searchParams.set("limit", "2000");
-        url.searchParams.set("offset", "0");
+        const upcoming = [];
+        const past = [];
 
-        const events = await getJson(url.toString());
-        const sofaTeamId = String(team.sofascore_team_id ?? "");
+        for (const ev of sorted){
+          const d = getEventDate(ev);
+          const type = String(ev.status_type || "").toLowerCase();
 
-        const filtered = (Array.isArray(events) ? events : [])
-          .filter(ev =>
-            String(ev.home_team_id ?? "") === sofaTeamId ||
-            String(ev.away_team_id ?? "") === sofaTeamId
-          )
-          .sort((a, b) => Number(a.start_ts || 0) - Number(b.start_ts || 0));
+          if (type === "inprogress" || (d && d.getTime() >= now && type !== "finished")){
+            upcoming.push(ev);
+          } else {
+            past.push(ev);
+          }
+        }
 
-        const list = document.getElementById("list");
+        past.sort((a, b) => Number(b.start_ts || 0) - Number(a.start_ts || 0));
+
+        const upcomingList = document.getElementById("upcomingList");
+        const pastList = document.getElementById("pastList");
         const empty = document.getElementById("empty");
-        list.innerHTML = "";
 
-        if (!filtered.length){
+        upcomingList.innerHTML = "";
+        pastList.innerHTML = "";
+
+        document.getElementById("countUpcoming").textContent = `${upcoming.length} kamper`;
+        document.getElementById("countPast").textContent = `${past.length} kamper`;
+
+        if (!events.length){
           empty.style.display = "block";
           empty.textContent = "Ingen kamper funnet for dette laget.";
         } else {
           empty.style.display = "none";
-          filtered.forEach(ev => list.appendChild(renderMatch(ev)));
+        }
+
+        if (upcoming.length){
+          upcoming.forEach(ev => upcomingList.appendChild(renderMatch(ev)));
+        } else {
+          upcomingList.innerHTML = `<div class="empty">Ingen kommende kamper.</div>`;
+        }
+
+        if (past.length){
+          past.forEach(ev => pastList.appendChild(renderMatch(ev)));
+        } else {
+          pastList.innerHTML = `<div class="empty">Ingen tidligere kamper.</div>`;
         }
 
         setLastUpdated(
