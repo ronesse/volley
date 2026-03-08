@@ -539,16 +539,6 @@
       return await res.json();
     }
 
-    async function fetchTeams(){
-      const data = await getJson(TEAMS_API_URL);
-      return Array.isArray(data) ? data : [];
-    }
-
-    async function fetchPlayers(){
-      const data = await getJson(PLAYERS_API_URL);
-      return Array.isArray(data) ? data : [];
-    }
-
     function logoUrl(sofaTeamId){
       return `${TEAM_LOGO_BASE}/${sofaTeamId}.png`;
     }
@@ -597,7 +587,6 @@
       const img = document.createElement("img");
       img.alt = player.name || "Spiller";
       img.loading = "lazy";
-
       img.onerror = () => {
         idx += 1;
         if (idx < candidates.length) img.src = candidates[idx];
@@ -718,7 +707,10 @@
 
       const teamNameLink = document.createElement("a");
       teamNameLink.className = "teamName";
-      teamNameLink.href = `lag_kamper.html?team_id=${encodeURIComponent(String(team.id ?? ""))}`;
+      teamNameLink.href =
+        `lag_kamper.html?team_id=${encodeURIComponent(String(team.id ?? ""))}` +
+        `&sofa_team_id=${encodeURIComponent(String(team.sofascore_team_id ?? ""))}` +
+        `&team_name=${encodeURIComponent(String(team.name ?? ""))}`;
       teamNameLink.textContent = team.name || "Ukjent lag";
 
       const teamMeta = document.createElement("div");
@@ -840,8 +832,8 @@
     async function refresh(){
       try{
         const [teamsData, playersData] = await Promise.all([
-          fetchTeams(),
-          fetchPlayers()
+          getJson(TEAMS_API_URL),
+          getJson(PLAYERS_API_URL)
         ]);
 
         teams = Array.isArray(teamsData) ? teamsData : [];
