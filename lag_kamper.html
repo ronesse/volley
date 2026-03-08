@@ -672,6 +672,10 @@
           }
         }
 
+        // Planlagte: motsatt rekkefølge
+        upcoming.sort((a, b) => Number(b.start_ts || 0) - Number(a.start_ts || 0));
+
+        // Ferdige: behold som nå
         past.sort((a, b) => Number(b.start_ts || 0) - Number(a.start_ts || 0));
 
         const upcomingList = document.getElementById("upcomingList");
