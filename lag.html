@@ -663,16 +663,14 @@
       const name = document.createElement("div");
       name.className = "playerName";
 
-      if (player.external_url){
-        const a = document.createElement("a");
-        a.href = player.external_url;
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-        a.textContent = player.name || "Ukjent spiller";
-        name.appendChild(a);
-      } else {
-        name.textContent = player.name || "Ukjent spiller";
-      }
+      const a = document.createElement("a");
+      a.href =
+        `spiller.html?player_id=${encodeURIComponent(String(player.id ?? ""))}` +
+        `&player_name=${encodeURIComponent(String(player.name ?? ""))}` +
+        `&team_id=${encodeURIComponent(String(player.team_id ?? ""))}` +
+        `&sofa_team_id=${encodeURIComponent(String(player.sofa_team_id ?? ""))}`;
+      a.textContent = player.name || "Ukjent spiller";
+      name.appendChild(a);
 
       const meta = document.createElement("div");
       meta.className = "playerMeta";
