@@ -130,6 +130,7 @@
       align-items:center;
       margin-bottom:10px;
     }
+
     .logoWrap{
       width:62px;
       height:62px;
@@ -139,6 +140,12 @@
       display:grid;
       place-items:center;
       overflow:hidden;
+      flex:0 0 auto;
+    }
+    .logoWrap.small{
+      width:38px;
+      height:38px;
+      border-radius:12px;
     }
     .logoWrap img{
       width:100%;
@@ -147,11 +154,19 @@
       display:block;
       padding:6px;
     }
+    .logoWrap.small img{
+      padding:4px;
+    }
+
     .fallbackBox{
       font-size:14px;
       font-weight:900;
       color:var(--muted);
     }
+    .logoWrap.small .fallbackBox{
+      font-size:11px;
+    }
+
     .teamTitle{
       font-size:18px;
       font-weight:900;
@@ -197,6 +212,7 @@
       padding:12px;
       box-shadow:var(--shadow);
     }
+
     .topLine{
       display:flex;
       justify-content:space-between;
@@ -214,7 +230,9 @@
       font-size:10px;
       color:var(--muted);
       font-weight:800;
+      line-height:1.25;
     }
+
     .status{
       flex:0 0 auto;
       background:var(--pillBg);
@@ -237,12 +255,26 @@
       gap:8px;
       align-items:center;
     }
+
+    .teamCol{
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+    }
+
     .teamName{
       font-size:12px;
       font-weight:900;
       text-align:center;
       line-height:1.15;
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
     }
+
     .centerBox{
       min-width:104px;
       background:var(--pillBg);
@@ -259,13 +291,14 @@
     .time{
       font-size:11px;
       font-weight:900;
-      line-height:1.1;
+      line-height:1.15;
     }
     .timeSub{
       margin-top:3px;
       font-size:10px;
       color:var(--muted);
       font-weight:800;
+      line-height:1.2;
     }
 
     .empty{
@@ -276,6 +309,26 @@
       border:1px dashed var(--line);
       color:var(--muted);
       font-size:12px;
+    }
+
+    @media (max-width:520px){
+      .logoWrap{
+        width:56px;
+        height:56px;
+      }
+      .logoWrap.small{
+        width:34px;
+        height:34px;
+      }
+      .centerBox{
+        min-width:94px;
+      }
+      .score{
+        font-size:16px;
+      }
+      .teamName{
+        font-size:11px;
+      }
     }
   </style>
 </head>
@@ -378,9 +431,9 @@
       return `${TEAM_LOGO_BASE}/${sofaTeamId}.png`;
     }
 
-    function createLogo(sofaTeamId, fallbackText = ""){
+    function createLogo(sofaTeamId, fallbackText = "", small = false){
       const wrap = document.createElement("div");
-      wrap.className = "logoWrap";
+      wrap.className = "logoWrap" + (small ? " small" : "");
 
       const img = document.createElement("img");
       img.alt = "Laglogo";
@@ -418,6 +471,16 @@
       });
     }
 
+    function formatDateOnly(date){
+      if (!date) return "";
+      return date.toLocaleDateString("no-NO", {
+        weekday:"short",
+        day:"2-digit",
+        month:"2-digit",
+        year:"numeric"
+      });
+    }
+
     function getStatusText(event){
       const type = String(event.status_type || "").toLowerCase();
       if (type === "finished") return "Ferdig";
@@ -452,10 +515,15 @@
       const top = document.createElement("div");
       top.className = "topLine";
 
+      const date = getEventDate(event);
+
       const left = document.createElement("div");
       left.innerHTML = `
         <div class="league">${event.tournament_name || "Kamp"}</div>
-        <div class="meta">${event.season_name || ""}${event.round ? ` · Runde ${event.round}` : ""}</div>
+        <div class="meta">
+          ${event.season_name || ""}${event.round ? ` · Runde ${event.round}` : ""}
+          ${formatDateOnly(date) ? ` · ${formatDateOnly(date)}` : ""}
+        </div>
       `;
 
       const type = String(event.status_type || "").toLowerCase();
@@ -470,8 +538,12 @@
       row.className = "teamsRow";
 
       const home = document.createElement("div");
-      home.className = "teamName";
-      home.textContent = event.home_team_name || "Hjemme";
+      home.className = "teamCol";
+      home.appendChild(createLogo(event.home_team_id, "H", true));
+      const homeName = document.createElement("div");
+      homeName.className = "teamName";
+      homeName.textContent = event.home_team_name || "Hjemme";
+      home.appendChild(homeName);
 
       const center = document.createElement("div");
       center.className = "centerBox";
@@ -479,17 +551,22 @@
       if (type === "finished" || type === "inprogress"){
         center.innerHTML = `
           <div class="score">${event.home_sets ?? 0}-${event.away_sets ?? 0}</div>
-          <div class="timeSub">${type === "inprogress" ? (event.status_desc || "LIVE") : "Resultat"}</div>
+          <div class="timeSub">${type === "inprogress" ? (event.status_desc || "LIVE") : "Spilt ${formatDateOnly(date)}"}</div>
         `;
       } else {
         center.innerHTML = `
-          <div class="time">${formatDateTime(getEventDate(event))}</div>
+          <div class="time">${formatDateTime(date)}</div>
+          <div class="timeSub">Kampstart</div>
         `;
       }
 
       const away = document.createElement("div");
-      away.className = "teamName";
-      away.textContent = event.away_team_name || "Borte";
+      away.className = "teamCol";
+      away.appendChild(createLogo(event.away_team_id, "B", true));
+      const awayName = document.createElement("div");
+      awayName.className = "teamName";
+      awayName.textContent = event.away_team_name || "Borte";
+      away.appendChild(awayName);
 
       row.appendChild(home);
       row.appendChild(center);
