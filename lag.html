@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Mine lag</title>
+  <title>Lag</title>
   <style>
     :root{
       color-scheme: light;
@@ -15,10 +15,6 @@
       --muted:#6b7280;
       --line:rgba(31,41,55,.08);
       --shadow:0 7px 18px rgba(15,23,42,.06);
-
-      --live:#22c55e;
-      --liveBg:#edf9f1;
-      --liveBorder:rgba(34,197,94,.18);
 
       --toggleBg:rgba(255,255,255,.10);
       --toggleBorder:rgba(255,255,255,.14);
@@ -32,6 +28,9 @@
       --abroadText:#b45309;
 
       --pillBg:#eef2f7;
+      --pillBorder:rgba(31,41,55,.08);
+      --playerBg:#eef6ff;
+      --playerBorder:rgba(59,130,246,.12);
     }
 
     body.dark{
@@ -45,10 +44,6 @@
       --line:rgba(255,255,255,.08);
       --shadow:0 7px 18px rgba(0,0,0,.14);
 
-      --live:#4ade80;
-      --liveBg:rgba(74,222,128,.12);
-      --liveBorder:rgba(74,222,128,.16);
-
       --toggleBg:rgba(255,255,255,.07);
       --toggleBorder:rgba(255,255,255,.10);
 
@@ -61,6 +56,9 @@
       --abroadText:#fbbf24;
 
       --pillBg:#303a49;
+      --pillBorder:rgba(255,255,255,.08);
+      --playerBg:#334155;
+      --playerBorder:rgba(148,163,184,.18);
     }
 
     *{box-sizing:border-box}
@@ -74,7 +72,7 @@
     }
 
     header{
-      max-width:980px;
+      max-width:1100px;
       margin:0 auto;
       padding:12px 10px 10px;
       color:#fff;
@@ -147,7 +145,7 @@
     }
 
     main{
-      max-width:980px;
+      max-width:1100px;
       margin:0 auto;
       padding:10px;
     }
@@ -179,30 +177,30 @@
       line-height:1;
     }
 
-    .section{
-      margin-top:14px;
-    }
-    .sectionTitle{
+    .toolbar{
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin:0 0 8px;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
     }
-    .sectionTitle h2{
-      margin:0;
-      font-size:14px;
-      font-weight:900;
-    }
-    .sectionCount{
-      color:var(--muted);
+    .chip{
+      appearance:none;
+      border:1px solid var(--pillBorder);
+      background:var(--pillBg);
+      color:var(--text);
+      border-radius:999px;
+      padding:7px 10px;
       font-size:11px;
-      font-weight:800;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .chip.active{
+      outline:2px solid rgba(59,130,246,.18);
     }
 
     .grid{
       display:grid;
-      gap:8px;
+      gap:10px;
       grid-template-columns:1fr;
     }
 
@@ -210,21 +208,21 @@
       background:var(--card);
       border:1px solid var(--line);
       border-radius:16px;
-      padding:10px;
+      padding:12px;
       box-shadow:var(--shadow);
     }
 
-    .teamRow{
+    .topRow{
       display:grid;
       grid-template-columns:auto 1fr auto;
       gap:10px;
-      align-items:center;
+      align-items:start;
     }
 
     .logoWrap{
-      width:50px;
-      height:50px;
-      border-radius:14px;
+      width:58px;
+      height:58px;
+      border-radius:16px;
       border:1px solid var(--line);
       background:var(--card2);
       display:grid;
@@ -237,7 +235,7 @@
       height:100%;
       object-fit:contain;
       display:block;
-      padding:5px;
+      padding:6px;
     }
     .fallbackBox{
       width:100%;
@@ -249,40 +247,38 @@
       color:var(--muted);
     }
 
-    .teamMain{
-      min-width:0;
-    }
+    .titleBlock{min-width:0}
     .teamName{
-      font-size:13px;
+      font-size:14px;
       font-weight:900;
       line-height:1.15;
     }
     .teamMeta{
-      margin-top:3px;
-      font-size:10px;
+      margin-top:4px;
+      font-size:11px;
       color:var(--muted);
       font-weight:800;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      line-height:1.25;
     }
 
     .badges{
       display:flex;
       gap:4px;
       flex-wrap:wrap;
-      margin-top:6px;
+      justify-content:flex-end;
+      align-self:start;
     }
     .badge{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      padding:3px 7px;
+      padding:4px 8px;
       border-radius:999px;
       font-size:9px;
       font-weight:900;
       line-height:1;
       text-transform:uppercase;
+      white-space:nowrap;
     }
     .badge.mizuno{
       background:var(--mizunoBg);
@@ -295,58 +291,60 @@
       color:var(--abroadText);
     }
 
-    .statusBox{
-      text-align:right;
-      min-width:88px;
+    .details{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+      margin-top:10px;
     }
-    .statusPill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:5px 8px;
-      border-radius:999px;
-      font-size:10px;
-      font-weight:900;
-      border:1px solid var(--line);
+    .detailBox{
       background:var(--pillBg);
-      color:var(--text);
-      white-space:nowrap;
+      border:1px solid var(--pillBorder);
+      border-radius:12px;
+      padding:8px;
+      min-width:0;
     }
-    .statusPill.live{
-      background:var(--liveBg);
-      border-color:var(--liveBorder);
-      color:var(--live);
-    }
-    .dot{
-      width:6px;
-      height:6px;
-      border-radius:999px;
-      background:var(--live);
-      flex:0 0 auto;
-    }
-
-    .eventBox{
-      margin-top:9px;
-      padding-top:9px;
-      border-top:1px solid var(--line);
-    }
-    .eventLeague{
-      font-size:10px;
-      font-weight:900;
-      line-height:1.15;
-    }
-    .eventMeta{
-      margin-top:3px;
+    .detailLabel{
       font-size:10px;
       color:var(--muted);
       font-weight:800;
-      line-height:1.2;
+      text-transform:uppercase;
+      letter-spacing:.3px;
+      margin-bottom:4px;
     }
-    .versus{
-      margin-top:6px;
+    .detailValue{
+      font-size:11px;
+      font-weight:800;
+      line-height:1.25;
+      word-break:break-word;
+    }
+
+    .playersSection{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid var(--line);
+    }
+    .playersTitle{
       font-size:11px;
       font-weight:900;
-      line-height:1.2;
+      margin-bottom:8px;
+    }
+    .playerList{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .playerPill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 9px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      background:var(--playerBg);
+      border:1px solid var(--playerBorder);
+      line-height:1;
     }
 
     .empty{
@@ -365,16 +363,19 @@
       }
     }
 
-    @media (max-width:520px){
+    @media (max-width:640px){
       .summaryBar{
         grid-template-columns:repeat(2,1fr);
       }
-      .logoWrap{
-        width:44px;
-        height:44px;
+      .topRow{
+        grid-template-columns:auto 1fr;
       }
-      .statusBox{
-        min-width:72px;
+      .badges{
+        grid-column:1 / -1;
+        justify-content:flex-start;
+      }
+      .details{
+        grid-template-columns:1fr;
       }
     }
   </style>
@@ -383,8 +384,8 @@
   <header>
     <div class="headRow">
       <div class="headLeft">
-        <h1>Mine lag</h1>
-        <p class="sub">Lag fra /teams, gruppert etter live, i dag og neste kamp</p>
+        <h1>Lag</h1>
+        <p class="sub">Hele teams-tabellen, med logo og norske spillere for abroad-lag</p>
       </div>
       <div class="headRight">
         <div class="headButtons">
@@ -400,67 +401,42 @@
   <main>
     <div class="summaryBar">
       <div class="summaryItem">
-        <div class="summaryLabel">Live</div>
-        <div id="summaryLive" class="summaryValue">0</div>
+        <div class="summaryLabel">Lag totalt</div>
+        <div id="summaryTotal" class="summaryValue">0</div>
       </div>
       <div class="summaryItem">
-        <div class="summaryLabel">I dag</div>
-        <div id="summaryToday" class="summaryValue">0</div>
+        <div class="summaryLabel">Mizuno</div>
+        <div id="summaryMizuno" class="summaryValue">0</div>
       </div>
       <div class="summaryItem">
-        <div class="summaryLabel">Senere</div>
-        <div id="summaryLater" class="summaryValue">0</div>
+        <div class="summaryLabel">Abroad</div>
+        <div id="summaryAbroad" class="summaryValue">0</div>
       </div>
       <div class="summaryItem">
-        <div class="summaryLabel">Ingen kamp</div>
-        <div id="summaryNone" class="summaryValue">0</div>
+        <div class="summaryLabel">Norske spillere</div>
+        <div id="summaryPlayers" class="summaryValue">0</div>
       </div>
     </div>
 
-    <section class="section">
-      <div class="sectionTitle">
-        <h2>Live nå</h2>
-        <div id="countLive" class="sectionCount">0 lag</div>
-      </div>
-      <div id="liveGrid" class="grid"></div>
-    </section>
+    <div class="toolbar">
+      <button class="chip active" data-filter="all" type="button">Alle</button>
+      <button class="chip" data-filter="mizuno" type="button">Mizuno</button>
+      <button class="chip" data-filter="abroad" type="button">Abroad</button>
+    </div>
 
-    <section class="section">
-      <div class="sectionTitle">
-        <h2>Spiller i dag</h2>
-        <div id="countToday" class="sectionCount">0 lag</div>
-      </div>
-      <div id="todayGrid" class="grid"></div>
-    </section>
-
-    <section class="section">
-      <div class="sectionTitle">
-        <h2>Neste kamp senere</h2>
-        <div id="countLater" class="sectionCount">0 lag</div>
-      </div>
-      <div id="laterGrid" class="grid"></div>
-    </section>
-
-    <section class="section">
-      <div class="sectionTitle">
-        <h2>Ingen kommende kamp funnet</h2>
-        <div id="countNone" class="sectionCount">0 lag</div>
-      </div>
-      <div id="noneGrid" class="grid"></div>
-    </section>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty" style="display:none"></div>
   </main>
 
   <script>
     const TEAMS_API_URL = "https://volleyball.ronesse.no/teams?limit=200&offset=0";
-    const EVENTS_API_BASE = "https://volleyball.ronesse.no/events";
-    const LIVE_API_URL = "https://volleyball.ronesse.no/live";
+    const PLAYERS_API_URL = "https://volleyball.ronesse.no/players?limit=1000&offset=0";
     const TEAM_LOGO_BASE = "https://volleyball.ronesse.no/img/teams";
     const THEME_KEY = "volley_theme_v1";
 
     let teams = [];
-    let futureEvents = [];
-    let liveEvents = [];
-    let teamCards = [];
+    let players = [];
+    let currentFilter = "all";
 
     function loadTheme(){
       try { return localStorage.getItem(THEME_KEY) || ""; }
@@ -514,22 +490,12 @@
       return Array.isArray(data) ? data : [];
     }
 
-    async function fetchLive(){
-      const data = await getJson(LIVE_API_URL);
+    async function fetchPlayers(){
+      const data = await getJson(PLAYERS_API_URL);
       return Array.isArray(data) ? data : [];
     }
 
-    async function fetchEventsRange(fromTs, toTs){
-      const url = new URL(EVENTS_API_BASE);
-      url.searchParams.set("from_ts", String(fromTs));
-      url.searchParams.set("to_ts", String(toTs));
-      url.searchParams.set("limit", "1000");
-      url.searchParams.set("offset", "0");
-      const data = await getJson(url.toString());
-      return Array.isArray(data) ? data : [];
-    }
-
-    function teamLogoUrl(teamId){
+    function logoUrl(teamId){
       return `${TEAM_LOGO_BASE}/${teamId}.png`;
     }
 
@@ -540,7 +506,7 @@
       const img = document.createElement("img");
       img.alt = "Laglogo";
       img.loading = "lazy";
-      img.src = teamLogoUrl(teamId);
+      img.src = logoUrl(teamId);
 
       img.onerror = () => {
         wrap.innerHTML = "";
@@ -554,320 +520,267 @@
       return wrap;
     }
 
-    function getTodayBounds(){
-      const now = new Date();
-      const start = new Date(now);
-      start.setHours(0,0,0,0);
-
-      const end = new Date(now);
-      end.setHours(23,59,59,999);
-
-      return {
-        startTs: Math.floor(start.getTime() / 1000),
-        endTs: Math.floor(end.getTime() / 1000)
-      };
+    function normalize(str){
+      return String(str ?? "").trim().toLowerCase();
     }
 
-    function getFutureBounds(){
-      const now = new Date();
-      const fromTs = Math.floor(now.getTime() / 1000);
-
-      const future = new Date(now);
-      future.setDate(future.getDate() + 21);
-
-      const toTs = Math.floor(future.getTime() / 1000);
-      return { fromTs, toTs };
+    function getPlayerName(player){
+      return (
+        player.name ||
+        player.player_name ||
+        player.full_name ||
+        [player.first_name, player.last_name].filter(Boolean).join(" ") ||
+        player.display_name ||
+        ""
+      );
     }
 
-    function getEventDate(event){
-      if (event.start_ts != null){
-        const n = Number(event.start_ts);
-        if (!Number.isNaN(n)) return new Date(n * 1000);
-      }
-      if (event.start_utc){
-        const d = new Date(String(event.start_utc).replace(" ", "T"));
-        if (!Number.isNaN(d.getTime())) return d;
-      }
-      return null;
+    function isNorwegianPlayer(player){
+      const values = [
+        player.country,
+        player.nationality,
+        player.nation,
+        player.passport_country,
+        player.birth_country,
+        player.player_country,
+        player.country_name,
+        player.nationality_name,
+        player.country_code,
+        player.nationality_code
+      ].map(normalize);
+
+      return values.some(v =>
+        v === "norge" ||
+        v === "norway" ||
+        v === "nor" ||
+        v === "no"
+      );
     }
 
-    function formatDateTime(date){
-      if (!date) return "Ukjent tidspunkt";
-      return date.toLocaleString("no-NO", {
-        day:"2-digit",
-        month:"2-digit",
-        hour:"2-digit",
-        minute:"2-digit"
-      });
+    function getPossiblePlayerTeamLinks(player){
+      const raw = [
+        player.team_id,
+        player.sofascore_team_id,
+        player.team_sofascore_id,
+        player.sofa_team_id,
+        player.club_id,
+        player.current_team_id,
+        player.team,
+        player.team_name,
+        player.club,
+        player.club_name
+      ];
+
+      return raw
+        .filter(v => v != null && String(v).trim() !== "")
+        .map(v => String(v).trim());
     }
 
-    function formatDateShort(date){
-      if (!date) return "";
-      return date.toLocaleDateString("no-NO", {
-        weekday:"short",
-        day:"2-digit",
-        month:"2-digit"
-      });
-    }
+    function getNorwegianPlayersForTeam(team){
+      const teamId = String(team.id ?? "").trim();
+      const sofaId = String(team.sofascore_team_id ?? "").trim();
+      const teamName = normalize(team.name);
 
-    function isToday(date){
-      if (!date) return false;
-      const now = new Date();
-      return date.getFullYear() === now.getFullYear() &&
-             date.getMonth() === now.getMonth() &&
-             date.getDate() === now.getDate();
-    }
+      const matches = [];
 
-    function getTeamEventMatch(team, event){
-      const sofaId = String(team.sofascore_team_id ?? "");
-      if (!sofaId) return false;
-      return String(event.home_team_id ?? "") === sofaId || String(event.away_team_id ?? "") === sofaId;
-    }
+      for (const player of players){
+        if (!isNorwegianPlayer(player)) continue;
 
-    function dedupeEventsById(events){
-      const seen = new Set();
-      const out = [];
-      for (const event of events){
-        const id = String(event.event_id ?? "");
-        if (!id || seen.has(id)) continue;
-        seen.add(id);
-        out.push(event);
-      }
-      return out;
-    }
+        const links = getPossiblePlayerTeamLinks(player).map(normalize);
+        const name = getPlayerName(player).trim();
+        if (!name) continue;
 
-    function groupTeams(sourceTeams){
-      const now = new Date();
+        const linked =
+          links.includes(normalize(teamId)) ||
+          links.includes(normalize(sofaId)) ||
+          links.includes(teamName);
 
-      const live = [];
-      const today = [];
-      const later = [];
-      const none = [];
-
-      for (const team of sourceTeams){
-        const sofaId = String(team.sofascore_team_id ?? "");
-        if (!sofaId) continue;
-
-        const teamLiveEvents = liveEvents.filter(ev => getTeamEventMatch(team, ev));
-        const teamFutureEvents = futureEvents
-          .filter(ev => getTeamEventMatch(team, ev))
-          .sort((a, b) => (Number(a.start_ts || 0) - Number(b.start_ts || 0)));
-
-        const liveEvent = teamLiveEvents[0] || null;
-        const nextEvent = teamFutureEvents.find(ev => {
-          const d = getEventDate(ev);
-          return d && d >= now;
-        }) || null;
-
-        const cardData = {
-          team,
-          liveEvent,
-          nextEvent
-        };
-
-        if (liveEvent){
-          live.push(cardData);
-        } else if (nextEvent){
-          const d = getEventDate(nextEvent);
-          if (isToday(d)) today.push(cardData);
-          else later.push(cardData);
-        } else {
-          none.push(cardData);
+        if (linked){
+          matches.push(name);
         }
       }
 
-      today.sort((a, b) => (Number(a.nextEvent?.start_ts || 0) - Number(b.nextEvent?.start_ts || 0)));
-      later.sort((a, b) => (Number(a.nextEvent?.start_ts || 0) - Number(b.nextEvent?.start_ts || 0)));
-      live.sort((a, b) => (Number(b.liveEvent?.change_ts || 0) - Number(a.liveEvent?.change_ts || 0)));
-      none.sort((a, b) => String(a.team.name || "").localeCompare(String(b.team.name || ""), "no"));
-
-      return { live, today, later, none };
+      return [...new Set(matches)].sort((a, b) => a.localeCompare(b, "no"));
     }
 
-    function renderBadge(groupType){
+    function updateSummary(){
+      const total = teams.length;
+      const mizuno = teams.filter(t => normalize(t.group_type) === "mizuno").length;
+      const abroad = teams.filter(t => normalize(t.group_type) === "abroad").length;
+
+      let totalNorwegianPlayers = 0;
+      for (const team of teams){
+        if (normalize(team.group_type) !== "abroad") continue;
+        totalNorwegianPlayers += getNorwegianPlayersForTeam(team).length;
+      }
+
+      document.getElementById("summaryTotal").textContent = String(total);
+      document.getElementById("summaryMizuno").textContent = String(mizuno);
+      document.getElementById("summaryAbroad").textContent = String(abroad);
+      document.getElementById("summaryPlayers").textContent = String(totalNorwegianPlayers);
+    }
+
+    function createBadge(groupType){
       const el = document.createElement("div");
       el.className = `badge ${groupType}`;
       el.textContent = groupType;
       return el;
     }
 
-    function getStatusPill(type){
-      const el = document.createElement("div");
-      el.className = "statusPill" + (type === "live" ? " live" : "");
-
-      if (type === "live"){
-        const dot = document.createElement("span");
-        dot.className = "dot";
-        el.appendChild(dot);
-        const text = document.createElement("span");
-        text.textContent = "LIVE";
-        el.appendChild(text);
-        return el;
-      }
-
-      const text = document.createElement("span");
-      text.textContent = type === "today" ? "I dag" : type === "later" ? "Neste" : "Ingen";
-      el.appendChild(text);
-      return el;
-    }
-
-    function renderTeamCard(item, state){
-      const { team, liveEvent, nextEvent } = item;
-      const event = liveEvent || nextEvent;
-
+    function renderCard(team){
       const card = document.createElement("div");
       card.className = "card";
 
-      const teamRow = document.createElement("div");
-      teamRow.className = "teamRow";
+      const topRow = document.createElement("div");
+      topRow.className = "topRow";
 
       const logo = createLogo(team.id, (team.name || "?").slice(0,1).toUpperCase());
 
-      const main = document.createElement("div");
-      main.className = "teamMain";
+      const titleBlock = document.createElement("div");
+      titleBlock.className = "titleBlock";
 
-      const name = document.createElement("div");
-      name.className = "teamName";
-      name.textContent = team.name || "Ukjent lag";
+      const teamName = document.createElement("div");
+      teamName.className = "teamName";
+      teamName.textContent = team.name || "Ukjent lag";
 
-      const meta = document.createElement("div");
-      meta.className = "teamMeta";
-      meta.textContent = `${team.country || ""}${team.league ? ` · ${team.league}` : ""}`;
+      const teamMeta = document.createElement("div");
+      teamMeta.className = "teamMeta";
+      teamMeta.textContent = `${team.country || ""}${team.league ? ` · ${team.league}` : ""}`;
+
+      titleBlock.appendChild(teamName);
+      titleBlock.appendChild(teamMeta);
 
       const badges = document.createElement("div");
       badges.className = "badges";
-      badges.appendChild(renderBadge(String(team.group_type || "").toLowerCase()));
-
-      main.appendChild(name);
-      main.appendChild(meta);
-      main.appendChild(badges);
-
-      const statusBox = document.createElement("div");
-      statusBox.className = "statusBox";
-      statusBox.appendChild(getStatusPill(state));
-
-      teamRow.appendChild(logo);
-      teamRow.appendChild(main);
-      teamRow.appendChild(statusBox);
-
-      card.appendChild(teamRow);
-
-      const eventBox = document.createElement("div");
-      eventBox.className = "eventBox";
-
-      if (liveEvent){
-        const league = document.createElement("div");
-        league.className = "eventLeague";
-        league.textContent = liveEvent.tournament_name || "Livekamp";
-
-        const metaLine = document.createElement("div");
-        metaLine.className = "eventMeta";
-        metaLine.textContent = `${liveEvent.season_name || ""}${liveEvent.round ? ` · Runde ${liveEvent.round}` : ""}${liveEvent.status_desc ? ` · ${liveEvent.status_desc}` : ""}`;
-
-        const versus = document.createElement("div");
-        versus.className = "versus";
-        versus.textContent = `${liveEvent.home_team_name || "Hjemme"} vs ${liveEvent.away_team_name || "Borte"} · ${liveEvent.home_sets ?? 0}-${liveEvent.away_sets ?? 0}`;
-
-        eventBox.appendChild(league);
-        eventBox.appendChild(metaLine);
-        eventBox.appendChild(versus);
-      } else if (nextEvent){
-        const league = document.createElement("div");
-        league.className = "eventLeague";
-        league.textContent = nextEvent.tournament_name || "Neste kamp";
-
-        const metaLine = document.createElement("div");
-        metaLine.className = "eventMeta";
-        const d = getEventDate(nextEvent);
-        metaLine.textContent = `${formatDateTime(d)}${nextEvent.round ? ` · Runde ${nextEvent.round}` : ""}`;
-
-        const versus = document.createElement("div");
-        versus.className = "versus";
-        versus.textContent = `${nextEvent.home_team_name || "Hjemme"} vs ${nextEvent.away_team_name || "Borte"}`;
-
-        eventBox.appendChild(league);
-        eventBox.appendChild(metaLine);
-        eventBox.appendChild(versus);
-      } else {
-        const metaLine = document.createElement("div");
-        metaLine.className = "eventMeta";
-        metaLine.textContent = "Ingen kommende kamp funnet i hentet periode.";
-        eventBox.appendChild(metaLine);
+      const groupType = normalize(team.group_type);
+      if (groupType === "mizuno" || groupType === "abroad"){
+        badges.appendChild(createBadge(groupType));
       }
 
-      card.appendChild(eventBox);
+      topRow.appendChild(logo);
+      topRow.appendChild(titleBlock);
+      topRow.appendChild(badges);
+
+      const details = document.createElement("div");
+      details.className = "details";
+
+      const widgetBox = document.createElement("div");
+      widgetBox.className = "detailBox";
+      widgetBox.innerHTML = `
+        <div class="detailLabel">Widget / turnering</div>
+        <div class="detailValue">${team.widget_name || "—"}</div>
+      `;
+
+      const sofaBox = document.createElement("div");
+      sofaBox.className = "detailBox";
+      sofaBox.innerHTML = `
+        <div class="detailLabel">Sofascore team id</div>
+        <div class="detailValue">${team.sofascore_team_id || "—"}</div>
+      `;
+
+      const homepageBox = document.createElement("div");
+      homepageBox.className = "detailBox";
+      homepageBox.innerHTML = `
+        <div class="detailLabel">Hjemmeside</div>
+        <div class="detailValue">${team.homepage_url || "—"}</div>
+      `;
+
+      const streamBox = document.createElement("div");
+      streamBox.className = "detailBox";
+      streamBox.innerHTML = `
+        <div class="detailLabel">Stream</div>
+        <div class="detailValue">${team.stream_url || "—"}</div>
+      `;
+
+      details.appendChild(widgetBox);
+      details.appendChild(sofaBox);
+      details.appendChild(homepageBox);
+      details.appendChild(streamBox);
+
+      card.appendChild(topRow);
+      card.appendChild(details);
+
+      if (groupType === "abroad"){
+        const norwegianPlayers = getNorwegianPlayersForTeam(team);
+
+        const playersSection = document.createElement("div");
+        playersSection.className = "playersSection";
+
+        const title = document.createElement("div");
+        title.className = "playersTitle";
+        title.textContent = "Norske spillere";
+
+        playersSection.appendChild(title);
+
+        if (norwegianPlayers.length){
+          const playerList = document.createElement("div");
+          playerList.className = "playerList";
+          norwegianPlayers.forEach(name => {
+            const pill = document.createElement("div");
+            pill.className = "playerPill";
+            pill.textContent = name;
+            playerList.appendChild(pill);
+          });
+          playersSection.appendChild(playerList);
+        } else {
+          const empty = document.createElement("div");
+          empty.className = "detailValue";
+          empty.style.color = "var(--muted)";
+          empty.textContent = "Ingen norske spillere funnet i /players.";
+          playersSection.appendChild(empty);
+        }
+
+        card.appendChild(playersSection);
+      }
+
       return card;
     }
 
-    function renderSection(containerId, countId, items, emptyText, state){
-      const container = document.getElementById(containerId);
-      const countEl = document.getElementById(countId);
+    function render(){
+      const grid = document.getElementById("grid");
+      const empty = document.getElementById("empty");
+      grid.innerHTML = "";
 
-      container.innerHTML = "";
-      countEl.textContent = `${items.length} ${items.length === 1 ? "lag" : "lag"}`;
+      const filtered = teams.filter(team => {
+        const g = normalize(team.group_type);
+        if (currentFilter === "all") return true;
+        return g === currentFilter;
+      });
 
-      if (!items.length){
-        const empty = document.createElement("div");
-        empty.className = "empty";
-        empty.textContent = emptyText;
-        container.appendChild(empty);
+      if (!filtered.length){
+        empty.style.display = "block";
+        empty.textContent = "Ingen lag å vise.";
         return;
       }
 
-      items.forEach(item => container.appendChild(renderTeamCard(item, state)));
+      empty.style.display = "none";
+
+      filtered
+        .slice()
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "no"))
+        .forEach(team => grid.appendChild(renderCard(team)));
     }
 
-    function renderSummary(groups){
-      document.getElementById("summaryLive").textContent = String(groups.live.length);
-      document.getElementById("summaryToday").textContent = String(groups.today.length);
-      document.getElementById("summaryLater").textContent = String(groups.later.length);
-      document.getElementById("summaryNone").textContent = String(groups.none.length);
-    }
-
-    function renderAll(){
-      const groups = groupTeams(teams);
-      renderSummary(groups);
-
-      renderSection("liveGrid", "countLive", groups.live, "Ingen lag er live akkurat nå.", "live");
-      renderSection("todayGrid", "countToday", groups.today, "Ingen flere lag spiller senere i dag.", "today");
-      renderSection("laterGrid", "countLater", groups.later, "Ingen senere kamper funnet.", "later");
-      renderSection("noneGrid", "countNone", groups.none, "Alle lag har kommende kamp registrert.", "none");
+    function setFilter(filter){
+      currentFilter = filter;
+      document.querySelectorAll(".chip").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.filter === filter);
+      });
+      render();
     }
 
     async function refresh(){
       try{
-        const { fromTs, toTs } = getFutureBounds();
-
-        const [teamsData, liveData, eventsData] = await Promise.all([
+        const [teamsData, playersData] = await Promise.all([
           fetchTeams(),
-          fetchLive(),
-          fetchEventsRange(fromTs, toTs)
+          fetchPlayers()
         ]);
 
-        teams = teamsData.filter(team => {
-          const group = String(team.group_type || "").toLowerCase();
-          return group === "mizuno" || group === "abroad";
-        });
+        teams = Array.isArray(teamsData) ? teamsData : [];
+        players = Array.isArray(playersData) ? playersData : [];
 
-        buildFavoriteTeams(teams);
-
-        liveEvents = dedupeEventsById(
-          liveData.filter(ev => {
-            const homeId = String(ev.home_team_id ?? "");
-            const awayId = String(ev.away_team_id ?? "");
-            return favoriteSofaTeamIds.has(homeId) || favoriteSofaTeamIds.has(awayId);
-          })
-        );
-
-        futureEvents = dedupeEventsById(
-          eventsData.filter(ev => {
-            const homeId = String(ev.home_team_id ?? "");
-            const awayId = String(ev.away_team_id ?? "");
-            return favoriteSofaTeamIds.has(homeId) || favoriteSofaTeamIds.has(awayId);
-          })
-        );
-
-        renderAll();
+        updateSummary();
+        render();
 
         setLastUpdated(
           `Oppdatert ${new Date().toLocaleTimeString("no-NO", {
@@ -877,23 +790,17 @@
           })}`
         );
       } catch (err){
-        for (const id of ["liveGrid", "todayGrid", "laterGrid", "noneGrid"]){
-          document.getElementById(id).innerHTML =
-            `<div class="empty">Kunne ikke hente lagoversikt (${err.message}).</div>`;
-        }
-        document.getElementById("summaryLive").textContent = "0";
-        document.getElementById("summaryToday").textContent = "0";
-        document.getElementById("summaryLater").textContent = "0";
-        document.getElementById("summaryNone").textContent = "0";
-        document.getElementById("countLive").textContent = "0 lag";
-        document.getElementById("countToday").textContent = "0 lag";
-        document.getElementById("countLater").textContent = "0 lag";
-        document.getElementById("countNone").textContent = "0 lag";
+        document.getElementById("grid").innerHTML = "";
+        document.getElementById("empty").style.display = "block";
+        document.getElementById("empty").textContent = `Kunne ikke hente lagoversikt (${err.message}).`;
         setLastUpdated(`Feil ${new Date().toLocaleTimeString("no-NO", { hour:"2-digit", minute:"2-digit" })}`);
       }
     }
 
     document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+    document.querySelectorAll(".chip").forEach(btn => {
+      btn.addEventListener("click", () => setFilter(btn.dataset.filter));
+    });
 
     initTheme();
     refresh();
