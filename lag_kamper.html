@@ -217,9 +217,11 @@
       border-radius:16px;
       padding:12px;
       box-shadow:var(--shadow);
+    }
+    .matchCard.is-clickable{
       cursor:pointer;
     }
-    .matchCard:hover{
+    .matchCard.is-clickable:hover{
       transform:translateY(-1px);
     }
 
@@ -387,7 +389,7 @@
     <div class="headRow">
       <div>
         <h1>Lagkamper</h1>
-        <p class="sub">Trykk på en kamp for å vise kampreferat</p>
+        <p class="sub">Trykk på en ferdig kamp for å vise kampreferat</p>
       </div>
       <div>
         <div class="headButtons">
@@ -431,6 +433,7 @@
 
     let openSummaryEventId = null;
     const summaryCache = new Map();
+    let currentRenderedEvents = [];
 
     function qs(name){
       return new URLSearchParams(location.search).get(name);
@@ -610,6 +613,9 @@
     }
 
     async function handleMatchClick(eventObj){
+      const type = String(eventObj.status_type || "").toLowerCase();
+      if (type !== "finished") return;
+
       const eventId = String(eventObj.event_id);
 
       if (openSummaryEventId === eventId){
@@ -631,9 +637,17 @@
     }
 
     function renderMatch(event){
+      const type = String(event.status_type || "").toLowerCase();
+      const isFinished = type === "finished";
+
       const card = document.createElement("div");
-      card.className = "matchCard" + (String(event.event_id) === String(openSummaryEventId) ? " expanded" : "");
-      card.addEventListener("click", () => { handleMatchClick(event); });
+      card.className = "matchCard" +
+        (String(event.event_id) === String(openSummaryEventId) ? " expanded" : "") +
+        (isFinished ? " is-clickable" : "");
+
+      if (isFinished){
+        card.addEventListener("click", () => { handleMatchClick(event); });
+      }
 
       const top = document.createElement("div");
       top.className = "topLine";
@@ -649,7 +663,6 @@
         </div>
       `;
 
-      const type = String(event.status_type || "").toLowerCase();
       const status = document.createElement("div");
       status.className = "status" + (type === "inprogress" ? " live" : "");
       status.textContent = getStatusText(event);
@@ -672,9 +685,13 @@
       center.className = "centerBox";
 
       if (type === "finished" || type === "inprogress"){
+        const sub = type === "inprogress"
+          ? (event.status_desc || "LIVE")
+          : `Spilt ${formatDateOnly(date)}`;
+
         center.innerHTML = `
           <div class="score">${event.home_sets ?? 0}-${event.away_sets ?? 0}</div>
-          <div class="timeSub">${type === "inprogress" ? (event.status_desc || "LIVE") : "Spilt ${formatDateOnly(date)}"}</div>
+          <div class="timeSub">${sub}</div>
         `;
       } else {
         center.innerHTML = `
@@ -698,7 +715,7 @@
       card.appendChild(top);
       card.appendChild(row);
 
-      if (String(event.event_id) === String(openSummaryEventId)){
+      if (isFinished && String(event.event_id) === String(openSummaryEventId)){
         card.appendChild(renderSummaryArea(event));
       }
 
@@ -756,8 +773,6 @@
         return true;
       });
     }
-
-    let currentRenderedEvents = [];
 
     function renderLists(events){
       currentRenderedEvents = events.slice();
