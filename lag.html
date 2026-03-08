@@ -385,7 +385,7 @@
     <div class="headRow">
       <div class="headLeft">
         <h1>Lag</h1>
-        <p class="sub">Hele teams-tabellen, med logo og norske spillere for abroad-lag</p>
+        <p class="sub">Hele teams-tabellen, med logo og norske spillere på abroad-lag</p>
       </div>
       <div class="headRight">
         <div class="headButtons">
@@ -495,18 +495,18 @@
       return Array.isArray(data) ? data : [];
     }
 
-    function logoUrl(teamId){
-      return `${TEAM_LOGO_BASE}/${teamId}.png`;
+    function logoUrl(sofaTeamId){
+      return `${TEAM_LOGO_BASE}/${sofaTeamId}.png`;
     }
 
-    function createLogo(teamId, fallbackText = ""){
+    function createLogo(sofaTeamId, fallbackText = ""){
       const wrap = document.createElement("div");
       wrap.className = "logoWrap";
 
       const img = document.createElement("img");
       img.alt = "Laglogo";
       img.loading = "lazy";
-      img.src = logoUrl(teamId);
+      img.src = logoUrl(sofaTeamId);
 
       img.onerror = () => {
         wrap.innerHTML = "";
@@ -520,87 +520,37 @@
       return wrap;
     }
 
-    function normalize(str){
-      return String(str ?? "").trim().toLowerCase();
-    }
-
-    function getPlayerName(player){
-      return (
-        player.name ||
-        player.player_name ||
-        player.full_name ||
-        [player.first_name, player.last_name].filter(Boolean).join(" ") ||
-        player.display_name ||
-        ""
-      );
-    }
-
-    function isNorwegianPlayer(player){
-      const values = [
-        player.country,
-        player.nationality,
-        player.nation,
-        player.passport_country,
-        player.birth_country,
-        player.player_country,
-        player.country_name,
-        player.nationality_name,
-        player.country_code,
-        player.nationality_code
-      ].map(normalize);
-
-      return values.some(v =>
-        v === "norge" ||
-        v === "norway" ||
-        v === "nor" ||
-        v === "no"
-      );
-    }
-
-    function getPossiblePlayerTeamLinks(player){
-      const raw = [
-        player.team_id,
-        player.sofascore_team_id,
-        player.team_sofascore_id,
-        player.sofa_team_id,
-        player.club_id,
-        player.current_team_id,
-        player.team,
-        player.team_name,
-        player.club,
-        player.club_name
-      ];
-
-      return raw
-        .filter(v => v != null && String(v).trim() !== "")
-        .map(v => String(v).trim());
+    function normalize(v){
+      return String(v ?? "").trim().toLowerCase();
     }
 
     function getNorwegianPlayersForTeam(team){
       const teamId = String(team.id ?? "").trim();
-      const sofaId = String(team.sofascore_team_id ?? "").trim();
-      const teamName = normalize(team.name);
+      const sofaTeamId = String(team.sofascore_team_id ?? "").trim();
 
-      const matches = [];
+      const matched = players.filter(player => {
+        const nationality = normalize(player.nationality);
+        if (nationality !== "norge" && nationality !== "norway") return false;
 
-      for (const player of players){
-        if (!isNorwegianPlayer(player)) continue;
+        const playerTeamId = String(player.team_id ?? "").trim();
+        const playerSofaTeamId = String(player.sofa_team_id ?? "").trim();
 
-        const links = getPossiblePlayerTeamLinks(player).map(normalize);
-        const name = getPlayerName(player).trim();
-        if (!name) continue;
+        return (
+          (teamId && playerTeamId && playerTeamId === teamId) ||
+          (sofaTeamId && playerSofaTeamId && playerSofaTeamId === sofaTeamId)
+        );
+      });
 
-        const linked =
-          links.includes(normalize(teamId)) ||
-          links.includes(normalize(sofaId)) ||
-          links.includes(teamName);
-
-        if (linked){
-          matches.push(name);
-        }
-      }
-
-      return [...new Set(matches)].sort((a, b) => a.localeCompare(b, "no"));
+      return matched
+        .map(player => ({
+          name: player.name || "",
+          position: player.position || "",
+          youthClub: player.youth_club || "",
+          birthYear: player.birth_year || "",
+          instagram: player.instagram || "",
+          externalUrl: player.external_url || ""
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, "no"));
     }
 
     function updateSummary(){
@@ -634,7 +584,8 @@
       const topRow = document.createElement("div");
       topRow.className = "topRow";
 
-      const logo = createLogo(team.id, (team.name || "?").slice(0,1).toUpperCase());
+      const sofaId = String(team.sofascore_team_id ?? "").trim();
+      const logo = createLogo(sofaId, (team.name || "?").slice(0,1).toUpperCase());
 
       const titleBlock = document.createElement("div");
       titleBlock.className = "titleBlock";
@@ -715,12 +666,19 @@
         if (norwegianPlayers.length){
           const playerList = document.createElement("div");
           playerList.className = "playerList";
-          norwegianPlayers.forEach(name => {
+
+          norwegianPlayers.forEach(player => {
             const pill = document.createElement("div");
             pill.className = "playerPill";
-            pill.textContent = name;
+
+            let text = player.name;
+            if (player.position) text += ` · ${player.position}`;
+            if (player.birthYear) text += ` · ${player.birthYear}`;
+
+            pill.textContent = text;
             playerList.appendChild(pill);
           });
+
           playersSection.appendChild(playerList);
         } else {
           const empty = document.createElement("div");
