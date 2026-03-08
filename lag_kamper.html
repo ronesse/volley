@@ -47,7 +47,6 @@
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       background:linear-gradient(180deg,var(--bgTop) 0%,var(--bgTop) 98px,var(--bg) 98px,var(--bg) 100%);
       color:var(--text);
-      -webkit-tap-highlight-color:transparent;
     }
 
     header{
@@ -422,4 +421,229 @@
     function getStatusText(event){
       const type = String(event.status_type || "").toLowerCase();
       if (type === "finished") return "Ferdig";
-      if (
+      if (type === "inprogress") return event.status_desc || "LIVE";
+      return "Planlagt";
+    }
+
+    function renderTeamHeader(name, country, league, sofaTeamId){
+      const el = document.getElementById("teamHeader");
+      el.style.display = "grid";
+      el.innerHTML = "";
+
+      el.appendChild(
+        createLogo(
+          sofaTeamId,
+          String(name || "?").slice(0,1).toUpperCase()
+        )
+      );
+
+      const block = document.createElement("div");
+      block.innerHTML = `
+        <div class="teamTitle">${name || "Lag"}</div>
+        <div class="teamMeta">${country || ""}${league ? ` · ${league}` : ""}</div>
+      `;
+      el.appendChild(block);
+    }
+
+    function renderMatch(event){
+      const card = document.createElement("div");
+      card.className = "matchCard";
+
+      const top = document.createElement("div");
+      top.className = "topLine";
+
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="league">${event.tournament_name || "Kamp"}</div>
+        <div class="meta">${event.season_name || ""}${event.round ? ` · Runde ${event.round}` : ""}</div>
+      `;
+
+      const type = String(event.status_type || "").toLowerCase();
+      const status = document.createElement("div");
+      status.className = "status" + (type === "inprogress" ? " live" : "");
+      status.textContent = getStatusText(event);
+
+      top.appendChild(left);
+      top.appendChild(status);
+
+      const row = document.createElement("div");
+      row.className = "teamsRow";
+
+      const home = document.createElement("div");
+      home.className = "teamName";
+      home.textContent = event.home_team_name || "Hjemme";
+
+      const center = document.createElement("div");
+      center.className = "centerBox";
+
+      if (type === "finished" || type === "inprogress"){
+        center.innerHTML = `
+          <div class="score">${event.home_sets ?? 0}-${event.away_sets ?? 0}</div>
+          <div class="timeSub">${type === "inprogress" ? (event.status_desc || "LIVE") : "Resultat"}</div>
+        `;
+      } else {
+        center.innerHTML = `
+          <div class="time">${formatDateTime(getEventDate(event))}</div>
+        `;
+      }
+
+      const away = document.createElement("div");
+      away.className = "teamName";
+      away.textContent = event.away_team_name || "Borte";
+
+      row.appendChild(home);
+      row.appendChild(center);
+      row.appendChild(away);
+
+      card.appendChild(top);
+      card.appendChild(row);
+
+      return card;
+    }
+
+    async function fetchEventsWindow(fromTs, toTs, offset = 0, limit = 1000){
+      const url = new URL(EVENTS_API_BASE);
+      url.searchParams.set("from_ts", String(fromTs));
+      url.searchParams.set("to_ts", String(toTs));
+      url.searchParams.set("limit", String(limit));
+      url.searchParams.set("offset", String(offset));
+      return await getJson(url.toString());
+    }
+
+    async function fetchRelevantEventsForSofaTeam(sofaTeamId){
+      const now = new Date();
+
+      const from = new Date(now);
+      from.setFullYear(from.getFullYear() - 1);
+
+      const to = new Date(now);
+      to.setFullYear(to.getFullYear() + 1);
+
+      const fromTs = Math.floor(from.getTime() / 1000);
+      const toTs = Math.floor(to.getTime() / 1000);
+
+      const all = [];
+      let offset = 0;
+      const limit = 1000;
+
+      while (true){
+        const batch = await fetchEventsWindow(fromTs, toTs, offset, limit);
+        const rows = Array.isArray(batch) ? batch : [];
+        all.push(...rows);
+
+        if (rows.length < limit) break;
+        offset += limit;
+        if (offset > 5000) break;
+      }
+
+      const target = String(sofaTeamId ?? "").trim();
+
+      const filtered = all.filter(event => {
+        const homeId = String(event.home_team_id ?? "").trim();
+        const awayId = String(event.away_team_id ?? "").trim();
+        return homeId === target || awayId === target;
+      });
+
+      const seen = new Set();
+      return filtered.filter(event => {
+        const id = String(event.event_id ?? "");
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    }
+
+    async function refresh(){
+      const teamId = qs("team_id");
+      const sofaTeamId = qs("sofa_team_id");
+      const teamName = qs("team_name");
+
+      if (!sofaTeamId){
+        document.getElementById("empty").style.display = "block";
+        document.getElementById("empty").textContent = "Mangler sofa_team_id i adressen.";
+        return;
+      }
+
+      try{
+        const teams = await getJson(TEAMS_API_URL);
+        const team = (Array.isArray(teams) ? teams : []).find(
+          t => String(t.id) === String(teamId)
+        );
+
+        const displayName = team?.name || teamName || "Lag";
+        const displayCountry = team?.country || "";
+        const displayLeague = team?.league || "";
+
+        renderTeamHeader(displayName, displayCountry, displayLeague, sofaTeamId);
+
+        const events = await fetchRelevantEventsForSofaTeam(sofaTeamId);
+
+        const sorted = events.sort((a, b) => Number(a.start_ts || 0) - Number(b.start_ts || 0));
+        const now = Date.now();
+
+        const upcoming = [];
+        const past = [];
+
+        for (const ev of sorted){
+          const d = getEventDate(ev);
+          const type = String(ev.status_type || "").toLowerCase();
+
+          if (type === "inprogress" || (d && d.getTime() >= now && type !== "finished")){
+            upcoming.push(ev);
+          } else {
+            past.push(ev);
+          }
+        }
+
+        past.sort((a, b) => Number(b.start_ts || 0) - Number(a.start_ts || 0));
+
+        const upcomingList = document.getElementById("upcomingList");
+        const pastList = document.getElementById("pastList");
+        const empty = document.getElementById("empty");
+
+        upcomingList.innerHTML = "";
+        pastList.innerHTML = "";
+
+        document.getElementById("countUpcoming").textContent = `${upcoming.length} kamper`;
+        document.getElementById("countPast").textContent = `${past.length} kamper`;
+
+        if (!events.length){
+          empty.style.display = "block";
+          empty.textContent = `Ingen kamper funnet for sofascore_team_id ${sofaTeamId}.`;
+        } else {
+          empty.style.display = "none";
+        }
+
+        if (upcoming.length){
+          upcoming.forEach(ev => upcomingList.appendChild(renderMatch(ev)));
+        } else {
+          upcomingList.innerHTML = `<div class="empty">Ingen kommende kamper.</div>`;
+        }
+
+        if (past.length){
+          past.forEach(ev => pastList.appendChild(renderMatch(ev)));
+        } else {
+          pastList.innerHTML = `<div class="empty">Ingen tidligere kamper.</div>`;
+        }
+
+        setLastUpdated(
+          `Oppdatert ${new Date().toLocaleTimeString("no-NO", {
+            hour:"2-digit",
+            minute:"2-digit",
+            second:"2-digit"
+          })}`
+        );
+      } catch (err){
+        document.getElementById("empty").style.display = "block";
+        document.getElementById("empty").textContent = `Kunne ikke hente lagkamper (${err.message}).`;
+        setLastUpdated(`Feil ${new Date().toLocaleTimeString("no-NO", { hour:"2-digit", minute:"2-digit" })}`);
+      }
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+
+    initTheme();
+    refresh();
+  </script>
+</body>
+</html>
