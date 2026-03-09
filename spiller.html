@@ -20,9 +20,8 @@
       --pillBg:#eef2f7;
       --pillBorder:rgba(31,41,55,.08);
       --link:#2563eb;
-      --warnBg:#fff7ed;
-      --warnBorder:#fdba74;
-      --warnText:#9a3412;
+      --accentBg:#eef6ff;
+      --accentBorder:rgba(37,99,235,.15);
     }
 
     body.dark{
@@ -40,9 +39,8 @@
       --pillBg:#303a49;
       --pillBorder:rgba(255,255,255,.08);
       --link:#93c5fd;
-      --warnBg:rgba(154,52,18,.18);
-      --warnBorder:rgba(251,146,60,.35);
-      --warnText:#fdba74;
+      --accentBg:#334155;
+      --accentBorder:rgba(148,163,184,.18);
     }
 
     *{box-sizing:border-box}
@@ -178,18 +176,6 @@
       line-height:1.35;
     }
 
-    .notice{
-      margin-bottom:10px;
-      background:var(--warnBg);
-      border:1px solid var(--warnBorder);
-      color:var(--warnText);
-      border-radius:16px;
-      padding:12px;
-      font-size:12px;
-      line-height:1.45;
-      display:none;
-    }
-
     .sectionTitle{
       display:flex;
       align-items:center;
@@ -294,34 +280,20 @@
       line-height:1.25;
     }
 
-    .statsGrid{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:8px;
-    }
-
-    .statBox{
-      background:var(--pillBg);
-      border:1px solid var(--pillBorder);
+    .playerLine{
+      background:var(--accentBg);
+      border:1px solid var(--accentBorder);
       border-radius:14px;
-      padding:9px;
-      min-width:0;
-    }
-
-    .statLabel{
-      font-size:10px;
-      color:var(--muted);
+      padding:10px;
+      font-size:12px;
+      line-height:1.5;
       font-weight:800;
-      text-transform:uppercase;
-      letter-spacing:.2px;
-      margin-bottom:4px;
     }
 
-    .statValue{
-      font-size:13px;
-      font-weight:900;
-      line-height:1.2;
-      word-break:break-word;
+    .muted{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
     }
 
     .empty{
@@ -333,12 +305,6 @@
       color:var(--muted);
       font-size:12px;
     }
-
-    @media (max-width:560px){
-      .statsGrid{ grid-template-columns:1fr; }
-      .playerHeader{ grid-template-columns:auto 1fr; }
-      .photoWrap{ width:64px; height:64px; }
-    }
   </style>
 </head>
 <body>
@@ -346,7 +312,7 @@
     <div class="headRow">
       <div>
         <h1>Spiller</h1>
-        <p class="sub">Kun spillerstats fra ferdige kamper, sortert nyeste først</p>
+        <p class="sub">Spillerlinje hentet fra kampreferat</p>
       </div>
       <div>
         <div class="headButtons">
@@ -362,7 +328,6 @@
 
   <main>
     <div id="playerHeader" class="playerHeader" style="display:none"></div>
-    <div id="notice" class="notice"></div>
 
     <section>
       <div class="sectionTitle">
@@ -376,8 +341,8 @@
 
   <script>
     const PLAYERS_API_URL = "https://volleyball.ronesse.no/players?limit=1000&offset=0";
-    const PLAYER_STATS_API = "https://volleyball.ronesse.no/player-stats";
-    const EVENTS_API = "https://volleyball.ronesse.no/events";
+    const TEAMS_API_URL = "https://volleyball.ronesse.no/teams?limit=200&offset=0";
+    const EVENTS_API_URL = "https://volleyball.ronesse.no/events";
     const PLAYER_IMG_BASE = "https://volleyball.ronesse.no/img/players";
     const THEME_KEY = "volley_theme_v1";
 
@@ -463,6 +428,26 @@
       return wrap;
     }
 
+    function renderPlayerHeader(player){
+      const el = document.getElementById("playerHeader");
+      el.style.display = "grid";
+      el.innerHTML = "";
+
+      el.appendChild(createPlayerPhoto(player));
+
+      const meta = [];
+      if (player.position) meta.push(player.position);
+      if (player.nationality) meta.push(player.nationality);
+      if (player.youth_club) meta.push(`Ungdomsklubb: ${player.youth_club}`);
+
+      const block = document.createElement("div");
+      block.innerHTML = `
+        <div class="playerTitle">${player.name || "Spiller"}</div>
+        <div class="playerMeta">${meta.join(" · ") || "Spillerprofil"}</div>
+      `;
+      el.appendChild(block);
+    }
+
     function getEventDate(event){
       if (event.start_ts != null){
         const n = Number(event.start_ts);
@@ -485,121 +470,84 @@
       });
     }
 
-    function renderPlayerHeader(player){
-      const el = document.getElementById("playerHeader");
-      el.style.display = "grid";
-      el.innerHTML = "";
-
-      el.appendChild(createPlayerPhoto(player));
-
-      const meta = [];
-      if (player.position) meta.push(player.position);
-      if (player.nationality) meta.push(player.nationality);
-      if (player.youth_club) meta.push(`Ungdomsklubb: ${player.youth_club}`);
-
-      const block = document.createElement("div");
-      block.innerHTML = `
-        <div class="playerTitle">${player.name || "Spiller"}</div>
-        <div class="playerMeta">${meta.join(" · ") || "Spillerprofil"}</div>
-      `;
-      el.appendChild(block);
+    function normalizeText(s){
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
     }
 
-    function prettyStatLabel(key){
-      const map = {
-        points: "Poeng",
-        kills: "Angrepspoeng",
-        aces: "Ess",
-        blocks: "Blokk",
-        receptions: "Mottak",
-        digs: "Forsvar",
-        errors: "Feil",
-        efficiency: "Effektivitet",
-        attack_pct: "Angrepsprosent",
-        attack_percentage: "Angrepsprosent",
-        attack_attempts: "Angrepsforsøk",
-        attack_errors: "Angrepsfeil",
-        serve_errors: "Servefeil",
-        reception_errors: "Mottaksfeil",
-        block_points: "Blokkpoeng",
-        total_points: "Totale poeng"
-      };
-      return map[key] || key.replaceAll("_", " ");
+    function extractPlayerLineFromSummary(summaryPayload, playerName){
+      const normalizedPlayer = normalizeText(playerName);
+      if (!normalizedPlayer) return "";
+
+      if (summaryPayload?.summary_html){
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(summaryPayload.summary_html, "text/html");
+        const items = Array.from(doc.querySelectorAll("li")).map(li => li.textContent?.trim() || "");
+        const match = items.find(text => normalizeText(text).includes(normalizedPlayer));
+        if (match) return match;
+      }
+
+      if (summaryPayload?.summary){
+        const lines = String(summaryPayload.summary)
+          .split("\n")
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        const match = lines.find(text => normalizeText(text).includes(normalizedPlayer));
+        if (match) return match.replace(/^•\s*/, "");
+      }
+
+      return "";
     }
 
-    function renderStat(label, value){
-      const box = document.createElement("div");
-      box.className = "statBox";
-      box.innerHTML = `
-        <div class="statLabel">${label}</div>
-        <div class="statValue">${value == null || value === "" ? "—" : value}</div>
-      `;
-      return box;
+    async function buildPlayerLine(eventId, playerName){
+      try{
+        const data = await getJson(`https://volleyball.ronesse.no/events/${encodeURIComponent(eventId)}/summary`);
+        return extractPlayerLineFromSummary(data, playerName);
+      } catch {
+        return "";
+      }
     }
 
-    function renderMatchCard(statRow, eventMap){
-      const eventId = String(statRow.event_id ?? "");
-      const event = eventMap.get(eventId);
-      const date = getEventDate(event || {});
+    async function renderMatchCard(event, playerName){
+      const date = getEventDate(event);
+      const playerLine = await buildPlayerLine(event.event_id, playerName);
 
       const card = document.createElement("div");
       card.className = "matchCard";
 
-      const top = document.createElement("div");
-      top.className = "topLine";
-      top.innerHTML = `
-        <div>
-          <div class="league">${event?.tournament_name || "Kamp"}</div>
-          <div class="meta">
-            ${event?.season_name || ""}${event?.round ? ` · Runde ${event.round}` : ""}
-            ${formatDateOnly(date) ? ` · ${formatDateOnly(date)}` : ""}
+      card.innerHTML = `
+        <div class="topLine">
+          <div>
+            <div class="league">${event.tournament_name || "Kamp"}</div>
+            <div class="meta">
+              ${event.season_name || ""}${event.round ? ` · Runde ${event.round}` : ""}
+              ${formatDateOnly(date) ? ` · ${formatDateOnly(date)}` : ""}
+            </div>
           </div>
+          <div class="status">Ferdig</div>
         </div>
-        <div class="status">Ferdig</div>
+
+        <div class="teamsRow">
+          <div class="teamName">${event.home_team_name || "Hjemme"}</div>
+          <div class="centerBox">
+            <div class="score">${event.home_sets ?? 0}-${event.away_sets ?? 0}</div>
+            <div class="timeSub">Spilt ${formatDateOnly(date)}</div>
+          </div>
+          <div class="teamName">${event.away_team_name || "Borte"}</div>
+        </div>
       `;
 
-      const teamsRow = document.createElement("div");
-      teamsRow.className = "teamsRow";
-      teamsRow.innerHTML = `
-        <div class="teamName">${event?.home_team_name || "Hjemme"}</div>
-        <div class="centerBox">
-          <div class="score">${event?.home_sets ?? 0}-${event?.away_sets ?? 0}</div>
-          <div class="timeSub">Spilt ${formatDateOnly(date)}</div>
-        </div>
-        <div class="teamName">${event?.away_team_name || "Borte"}</div>
-      `;
-
-      const statsGrid = document.createElement("div");
-      statsGrid.className = "statsGrid";
-
-      const excluded = new Set(["id","event_id","player_id","team","player","name"]);
-      const preferredOrder = [
-        "points","kills","aces","blocks","receptions","digs","errors",
-        "efficiency","attack_pct","attack_percentage","attack_attempts",
-        "attack_errors","serve_errors","reception_errors","block_points","total_points"
-      ];
-
-      const keys = Object.keys(statRow).filter(k => !excluded.has(k));
-      const ordered = [
-        ...preferredOrder.filter(k => keys.includes(k)),
-        ...keys.filter(k => !preferredOrder.includes(k))
-      ];
-
-      ordered.forEach(key => {
-        statsGrid.appendChild(renderStat(prettyStatLabel(key), statRow[key]));
-      });
-
-      card.appendChild(top);
-      card.appendChild(teamsRow);
-      card.appendChild(statsGrid);
+      const lineBox = document.createElement("div");
+      lineBox.className = playerLine ? "playerLine" : "muted";
+      lineBox.textContent = playerLine || "Ingen spillerlinje funnet i kampreferatet.";
+      card.appendChild(lineBox);
 
       return card;
-    }
-
-    function showNotice(text){
-      const el = document.getElementById("notice");
-      el.style.display = "block";
-      el.textContent = text;
     }
 
     async function refresh(){
@@ -613,63 +561,67 @@
       }
 
       try{
-        const players = await getJson(PLAYERS_API_URL);
+        const [players, teams] = await Promise.all([
+          getJson(PLAYERS_API_URL),
+          getJson(TEAMS_API_URL)
+        ]);
+
         const player = (Array.isArray(players) ? players : []).find(
           p => String(p.id) === String(playerId)
-        ) || {
-          id: playerId,
-          name: playerName || "Spiller"
-        };
+        ) || { id: playerId, name: playerName || "Spiller" };
 
         renderPlayerHeader(player);
 
-        let stats;
-        try{
-          stats = await getJson(`${PLAYER_STATS_API}?player_id=${encodeURIComponent(playerId)}&limit=1000&offset=0`);
-        } catch (err){
-          const msg = String(err.message || "");
-          if (msg.includes("Failed to fetch")){
-            showNotice("Spillerstats blokkeres av CORS når siden kjøres fra GitHub Pages. Dette vil fungere hvis API-et åpner CORS, eller hvis siden hostes på samme domene som volleyball.ronesse.no.");
-          }
-          throw err;
+        const sofaTeamId = String(player.sofa_team_id ?? "").trim();
+        const localTeamId = String(player.team_id ?? "").trim();
+
+        let team = null;
+        if (Array.isArray(teams)){
+          team = teams.find(t =>
+            (localTeamId && String(t.id ?? "") === localTeamId) ||
+            (sofaTeamId && String(t.sofascore_team_id ?? "") === sofaTeamId)
+          ) || null;
         }
 
-        const statRows = Array.isArray(stats) ? stats : [];
-        const finishedRows = statRows.filter(row => row.event_id != null);
+        const now = new Date();
+        const from = new Date(now);
+        from.setFullYear(from.getFullYear() - 1);
+        const to = new Date(now);
+        to.setFullYear(to.getFullYear() + 1);
 
-        const uniqueEventIds = [...new Set(finishedRows.map(r => String(r.event_id)))];
-        const eventFetches = uniqueEventIds.map(id => getJson(`${EVENTS_API}/${encodeURIComponent(id)}`));
-        const eventResults = await Promise.all(eventFetches);
+        const url = new URL(EVENTS_API_URL);
+        url.searchParams.set("from_ts", String(Math.floor(from.getTime() / 1000)));
+        url.searchParams.set("to_ts", String(Math.floor(to.getTime() / 1000)));
+        url.searchParams.set("limit", "1000");
+        url.searchParams.set("offset", "0");
 
-        const eventMap = new Map();
-        eventResults.forEach(ev => {
-          if (!ev) return;
-          const eventId = String(ev.event_id ?? ev.id ?? "");
-          if (!eventId) return;
-          if (String(ev.status_type || "").toLowerCase() !== "finished") return;
-          eventMap.set(eventId, ev);
-        });
+        const events = await getJson(url.toString());
 
-        const rows = finishedRows
-          .filter(row => eventMap.has(String(row.event_id)))
-          .sort((a, b) => {
-            const ea = eventMap.get(String(a.event_id));
-            const eb = eventMap.get(String(b.event_id));
-            return Number(eb?.start_ts || 0) - Number(ea?.start_ts || 0);
-          });
+        const finishedEvents = (Array.isArray(events) ? events : [])
+          .filter(ev => {
+            const homeId = String(ev.home_team_id ?? "").trim();
+            const awayId = String(ev.away_team_id ?? "").trim();
+            return sofaTeamId && (homeId === sofaTeamId || awayId === sofaTeamId);
+          })
+          .filter(ev => String(ev.status_type || "").toLowerCase() === "finished")
+          .sort((a, b) => Number(b.start_ts || 0) - Number(a.start_ts || 0));
+
+        document.getElementById("countMatches").textContent = `${finishedEvents.length} kamper`;
 
         const list = document.getElementById("list");
         const empty = document.getElementById("empty");
         list.innerHTML = "";
 
-        document.getElementById("countMatches").textContent = `${rows.length} kamper`;
-
-        if (!rows.length){
+        if (!finishedEvents.length){
           empty.style.display = "block";
-          empty.textContent = "Ingen ferdige kamper med spillerstats funnet.";
+          empty.textContent = team
+            ? `Ingen ferdige kamper funnet for ${team.name}.`
+            : "Ingen ferdige kamper funnet.";
         } else {
           empty.style.display = "none";
-          rows.forEach(row => list.appendChild(renderMatchCard(row, eventMap)));
+          for (const event of finishedEvents){
+            list.appendChild(await renderMatchCard(event, player.name || playerName || ""));
+          }
         }
 
         setLastUpdated(
@@ -681,7 +633,7 @@
         );
       } catch (err){
         document.getElementById("empty").style.display = "block";
-        document.getElementById("empty").textContent = `Kunne ikke hente spillerstats (${err.message}).`;
+        document.getElementById("empty").textContent = `Kunne ikke hente spillerkamper (${err.message}).`;
         setLastUpdated(`Feil ${new Date().toLocaleTimeString("no-NO", { hour:"2-digit", minute:"2-digit" })}`);
       }
     }
