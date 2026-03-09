@@ -19,7 +19,6 @@
       --toggleBorder:rgba(255,255,255,.14);
       --pillBg:#eef2f7;
       --pillBorder:rgba(31,41,55,.08);
-      --link:#2563eb;
       --accentBg:#eef6ff;
       --accentBorder:rgba(37,99,235,.15);
     }
@@ -38,7 +37,6 @@
       --toggleBorder:rgba(255,255,255,.10);
       --pillBg:#303a49;
       --pillBorder:rgba(255,255,255,.08);
-      --link:#93c5fd;
       --accentBg:#334155;
       --accentBorder:rgba(148,163,184,.18);
     }
@@ -312,7 +310,7 @@
     <div class="headRow">
       <div>
         <h1>Spiller</h1>
-        <p class="sub">Spillerlinje hentet fra kampreferat</p>
+        <p class="sub">Spillerlinje hentet fra kampreferat for alle ferdige kamper</p>
       </div>
       <div>
         <div class="headButtons">
@@ -341,7 +339,6 @@
 
   <script>
     const PLAYERS_API_URL = "https://volleyball.ronesse.no/players?limit=1000&offset=0";
-    const TEAMS_API_URL = "https://volleyball.ronesse.no/teams?limit=200&offset=0";
     const EVENTS_API_URL = "https://volleyball.ronesse.no/events";
     const PLAYER_IMG_BASE = "https://volleyball.ronesse.no/img/players";
     const THEME_KEY = "volley_theme_v1";
@@ -392,6 +389,85 @@
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.json();
+    }
+
+    async function getAllEventsByTeamId(sofaTeamId){
+      const out = [];
+      let offset = 0;
+      const limit = 1000;
+
+      while (true){
+        const url = new URL(EVENTS_API_URL);
+        url.searchParams.set("team_id", String(sofaTeamId));
+        url.searchParams.set("limit", String(limit));
+        url.searchParams.set("offset", String(offset));
+
+        const rows = await getJson(url.toString());
+        const arr = Array.isArray(rows) ? rows : [];
+
+        out.push(...arr);
+
+        if (arr.length < limit) break;
+        offset += limit;
+        if (offset > 10000) break;
+      }
+
+      return out;
+    }
+
+    async function getAllEventsFallbackFiltered(sofaTeamId){
+      const out = [];
+      let offset = 0;
+      const limit = 1000;
+
+      const now = new Date();
+      const from = new Date(now);
+      from.setFullYear(from.getFullYear() - 3);
+
+      const to = new Date(now);
+      to.setFullYear(to.getFullYear() + 1);
+
+      while (true){
+        const url = new URL(EVENTS_API_URL);
+        url.searchParams.set("from_ts", String(Math.floor(from.getTime() / 1000)));
+        url.searchParams.set("to_ts", String(Math.floor(to.getTime() / 1000)));
+        url.searchParams.set("limit", String(limit));
+        url.searchParams.set("offset", String(offset));
+
+        const rows = await getJson(url.toString());
+        const arr = Array.isArray(rows) ? rows : [];
+
+        out.push(...arr);
+
+        if (arr.length < limit) break;
+        offset += limit;
+        if (offset > 10000) break;
+      }
+
+      const target = String(sofaTeamId).trim();
+      return out.filter(ev => {
+        const homeId = String(ev.home_team_id ?? "").trim();
+        const awayId = String(ev.away_team_id ?? "").trim();
+        return homeId === target || awayId === target;
+      });
+    }
+
+    function dedupeEvents(events){
+      const seen = new Set();
+      return events.filter(ev => {
+        const id = String(ev.event_id ?? "");
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    }
+
+    async function getAllRelevantEvents(sofaTeamId){
+      const primary = await getAllEventsByTeamId(sofaTeamId);
+      if (primary.length >= 10) return dedupeEvents(primary);
+
+      const fallback = await getAllEventsFallbackFiltered(sofaTeamId);
+      return dedupeEvents([...primary, ...fallback]);
     }
 
     function playerImageCandidates(playerId){
@@ -561,10 +637,7 @@
       }
 
       try{
-        const [players, teams] = await Promise.all([
-          getJson(PLAYERS_API_URL),
-          getJson(TEAMS_API_URL)
-        ]);
+        const players = await getJson(PLAYERS_API_URL);
 
         const player = (Array.isArray(players) ? players : []).find(
           p => String(p.id) === String(playerId)
@@ -573,36 +646,16 @@
         renderPlayerHeader(player);
 
         const sofaTeamId = String(player.sofa_team_id ?? "").trim();
-        const localTeamId = String(player.team_id ?? "").trim();
 
-        let team = null;
-        if (Array.isArray(teams)){
-          team = teams.find(t =>
-            (localTeamId && String(t.id ?? "") === localTeamId) ||
-            (sofaTeamId && String(t.sofascore_team_id ?? "") === sofaTeamId)
-          ) || null;
+        if (!sofaTeamId){
+          document.getElementById("empty").style.display = "block";
+          document.getElementById("empty").textContent = "Spilleren mangler sofa_team_id.";
+          return;
         }
 
-        const now = new Date();
-        const from = new Date(now);
-        from.setFullYear(from.getFullYear() - 1);
-        const to = new Date(now);
-        to.setFullYear(to.getFullYear() + 1);
+        const allEvents = await getAllRelevantEvents(sofaTeamId);
 
-        const url = new URL(EVENTS_API_URL);
-        url.searchParams.set("from_ts", String(Math.floor(from.getTime() / 1000)));
-        url.searchParams.set("to_ts", String(Math.floor(to.getTime() / 1000)));
-        url.searchParams.set("limit", "1000");
-        url.searchParams.set("offset", "0");
-
-        const events = await getJson(url.toString());
-
-        const finishedEvents = (Array.isArray(events) ? events : [])
-          .filter(ev => {
-            const homeId = String(ev.home_team_id ?? "").trim();
-            const awayId = String(ev.away_team_id ?? "").trim();
-            return sofaTeamId && (homeId === sofaTeamId || awayId === sofaTeamId);
-          })
+        const finishedEvents = allEvents
           .filter(ev => String(ev.status_type || "").toLowerCase() === "finished")
           .sort((a, b) => Number(b.start_ts || 0) - Number(a.start_ts || 0));
 
@@ -614,9 +667,7 @@
 
         if (!finishedEvents.length){
           empty.style.display = "block";
-          empty.textContent = team
-            ? `Ingen ferdige kamper funnet for ${team.name}.`
-            : "Ingen ferdige kamper funnet.";
+          empty.textContent = "Ingen ferdige kamper funnet.";
         } else {
           empty.style.display = "none";
           for (const event of finishedEvents){
