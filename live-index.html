@@ -129,37 +129,40 @@
       text-align:right;
     }
 
-    .headButtons{
-      display:flex;
-      gap:6px;
-      align-items:center;
-      flex-wrap:wrap;
-      justify-content:flex-end;
-    }
-    .headLink,
-    .themeToggle{
-      appearance:none;
-      border:1px solid var(--toggleBorder);
-      background:var(--toggleBg);
-      color:#fff;
-      min-height:38px;
-      border-radius:999px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      font-size:12px;
-      line-height:1;
-      text-decoration:none;
-      backdrop-filter:blur(6px);
-      padding:0 12px;
-      font-weight:900;
-    }
-    .themeToggle{
-      width:38px;
-      padding:0;
-      font-size:16px;
-    }
+.headButtons{
+  display:flex;
+  gap:6px;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:nowrap;
+}
+
+.navIcon,
+.themeToggle{
+  appearance:none;
+  border:1px solid var(--toggleBorder);
+  background:var(--toggleBg);
+  color:#fff;
+  width:34px;
+  height:34px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+  backdrop-filter:blur(6px);
+  font-size:15px;
+  font-weight:900;
+  line-height:1;
+  flex:0 0 auto;
+  cursor:pointer;
+  padding:0;
+}
+
+.navIcon:active,
+.themeToggle:active{
+  transform:scale(.98);
+}
 
     .tabs{
       display:grid;
@@ -743,16 +746,12 @@
         <p class="sub">Valgte = manuelle + mizuno + abroad. Trykk kort for serve og sett.</p>
       </div>
       <div class="headRight">
-<div class="headButtons" style="flex-direction:column;align-items:flex-end;">
-  <a class="headLink" href="dagens_kamper.html">📅 Dagens kamper</a>
-  <a class="headLink" href="lag.html">🏐 Lag</a>
-  <a class="headLink" href="spillere.html">👤 Spillere</a>
-
-  <button id="themeToggle"
-          class="themeToggle"
-          type="button"
-          aria-label="Bytt tema"
-          title="Bytt dag/natt">🌙</button>
+<div class="headButtons">
+  <a class="navIcon" href="live-index.html" title="Live" aria-label="Live">🏐</a>
+  <a class="navIcon" href="dagens_kamper.html" title="Dagens kamper" aria-label="Dagens kamper">📅</a>
+  <a class="navIcon" href="lag.html" title="Lag" aria-label="Lag">⭐</a>
+  <a class="navIcon" href="lag.html" title="Spillere" aria-label="Spillere">👤</a>
+  <button id="themeToggle" class="themeToggle" type="button" aria-label="Bytt tema" title="Bytt dag/natt">🌙</button>
 </div>
         <div class="lastUpdated" id="lastUpdated"></div>
       </div>
