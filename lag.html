@@ -666,9 +666,7 @@
       const a = document.createElement("a");
       a.href =
         `spiller.html?player_id=${encodeURIComponent(String(player.id ?? ""))}` +
-        `&player_name=${encodeURIComponent(String(player.name ?? ""))}` +
-        `&team_id=${encodeURIComponent(String(player.team_id ?? ""))}` +
-        `&sofa_team_id=${encodeURIComponent(String(player.sofa_team_id ?? ""))}`;
+        `&player_name=${encodeURIComponent(String(player.name ?? ""))}`;
       a.textContent = player.name || "Ukjent spiller";
       name.appendChild(a);
 
