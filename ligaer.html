@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Ligaer og tabeller</title>
+  <style>
+    :root{
+      color-scheme: light;
+      --bgTop:#243048;
+      --bg:#edf1f5;
+      --card:#f7f8fa;
+      --card2:#f2f4f7;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --line:rgba(31,41,55,.08);
+      --shadow:0 8px 20px rgba(15,23,42,.06);
+      --toggleBg:rgba(255,255,255,.10);
+      --toggleBorder:rgba(255,255,255,.14);
+      --pillBg:#eef2f7;
+      --pillBorder:rgba(31,41,55,.08);
+      --accent:#2563eb;
+    }
+
+    body.dark{
+      color-scheme: dark;
+      --bgTop:#1f2937;
+      --bg:#2b3442;
+      --card:#364152;
+      --card2:#313b4b;
+      --text:#e7ebf1;
+      --muted:#b3bdc9;
+      --line:rgba(255,255,255,.08);
+      --shadow:0 8px 20px rgba(0,0,0,.15);
+      --toggleBg:rgba(255,255,255,.07);
+      --toggleBorder:rgba(255,255,255,.10);
+      --pillBg:#303a49;
+      --pillBorder:rgba(255,255,255,.08);
+      --accent:#93c5fd;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:linear-gradient(180deg,var(--bgTop) 0%,var(--bgTop) 98px,var(--bg) 98px,var(--bg) 100%);
+      color:var(--text);
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    header{
+      max-width:1200px;
+      margin:0 auto;
+      padding:12px 10px 10px;
+      color:#fff;
+    }
+
+    .headRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+
+    .headLeft{min-width:0}
+    .headRight{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:8px;
+      flex:0 0 auto;
+    }
+
+    h1{
+      margin:0;
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .sub{
+      margin:4px 0 0;
+      font-size:11px;
+      color:rgba(255,255,255,.82);
+      line-height:1.35;
+    }
+
+    .lastUpdated{
+      font-size:10px;
+      color:rgba(255,255,255,.75);
+      text-align:right;
+    }
+
+    .headButtons{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:nowrap;
+    }
+
+    .navIcon,
+    .themeToggle{
+      appearance:none;
+      border:1px solid var(--toggleBorder);
+      background:var(--toggleBg);
+      color:#fff;
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      backdrop-filter:blur(6px);
+      font-size:15px;
+      font-weight:900;
+      line-height:1;
+      flex:0 0 auto;
+      cursor:pointer;
+      padding:0;
+    }
+
+    main{
+      max-width:1200px;
+      margin:0 auto;
+      padding:10px;
+      display:grid;
+      gap:12px;
+      grid-template-columns:1fr;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+
+    .count{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .search{
+      appearance:none;
+      width:100%;
+      max-width:300px;
+      border:1px solid var(--line);
+      background:var(--card);
+      color:var(--text);
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:12px;
+      font-weight:700;
+      outline:none;
+      box-shadow:var(--shadow);
+    }
+
+    .layout{
+      display:grid;
+      gap:12px;
+      grid-template-columns:1fr;
+    }
+
+    .leagueGrid{
+      display:grid;
+      gap:10px;
+      grid-template-columns:1fr;
+      align-content:start;
+    }
+
+    .leagueCard{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      gap:10px;
+      align-items:center;
+      cursor:pointer;
+    }
+
+    .leagueCard.active{
+      outline:2px solid var(--accent);
+      outline-offset:0;
+    }
+
+    .leagueLogo,
+    .teamLogo{
+      width:44px;
+      height:44px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:var(--card2);
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+    }
+
+    .leagueLogo img,
+    .teamLogo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      padding:4px;
+    }
+
+    .logoFallback{
+      font-size:12px;
+      font-weight:900;
+      color:var(--muted);
+    }
+
+    .leagueText{
+      min-width:0;
+    }
+
+    .leagueName{
+      font-size:14px;
+      font-weight:900;
+      line-height:1.2;
+    }
+
+    .leagueMeta{
+      margin-top:3px;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+      line-height:1.3;
+    }
+
+    .leagueBadge{
+      background:var(--pillBg);
+      border:1px solid var(--pillBorder);
+      color:var(--muted);
+      border-radius:999px;
+      padding:5px 8px;
+      font-size:10px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      min-height:240px;
+    }
+
+    .panelHeader{
+      display:grid;
+      grid-template-columns:auto 1fr;
+      gap:10px;
+      align-items:center;
+      padding:12px;
+      border-bottom:1px solid var(--line);
+      background:var(--card);
+    }
+
+    .panelTitle{
+      font-size:15px;
+      font-weight:950;
+      line-height:1.2;
+    }
+
+    .panelMeta{
+      margin-top:3px;
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+      line-height:1.3;
+    }
+
+    .panelBody{
+      padding:0;
+    }
+
+    .placeholder,
+    .errorBox{
+      padding:18px;
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+    }
+
+    .errorBox{
+      color:#b91c1c;
+    }
+
+    .tableWrap{
+      width:100%;
+      overflow:auto;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:620px;
+    }
+
+    th, td{
+      padding:10px 8px;
+      border-bottom:1px solid var(--line);
+      font-size:12px;
+      text-align:left;
+      vertical-align:middle;
+      white-space:nowrap;
+    }
+
+    th{
+      font-size:10px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.3px;
+      font-weight:900;
+      background:var(--card2);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    .pos{
+      width:40px;
+      text-align:center;
+      font-weight:950;
+    }
+
+    .teamCell{
+      display:grid;
+      grid-template-columns:auto 1fr;
+      align-items:center;
+      gap:8px;
+      min-width:200px;
+    }
+
+    .teamCell .teamLogo{
+      width:34px;
+      height:34px;
+      border-radius:10px;
+    }
+
+    .teamName{
+      font-weight:900;
+      line-height:1.2;
+    }
+
+    .num{
+      text-align:center;
+      font-variant-numeric:tabular-nums;
+      font-weight:800;
+    }
+
+    .smallMuted{
+      color:var(--muted);
+      font-weight:700;
+      font-size:10px;
+    }
+
+    .loadingSpinner{
+      width:20px;
+      height:20px;
+      border:2px solid rgba(0,0,0,.12);
+      border-top:2px solid var(--accent);
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+      margin:0 auto 8px;
+    }
+
+    body.dark .loadingSpinner{
+      border-color:rgba(255,255,255,.12);
+      border-top-color:var(--accent);
+    }
+
+    @keyframes spin{
+      to{ transform:rotate(360deg); }
+    }
+
+    @media (min-width:980px){
+      .layout{
+        grid-template-columns:380px 1fr;
+        align-items:start;
+      }
+
+      .panel{
+        position:sticky;
+        top:10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="headRow">
+      <div class="headLeft">
+        <h1>Ligaer</h1>
+        <p class="sub">Klikk på en liga for å vise full tabell</p>
+      </div>
+      <div class="headRight">
+        <div class="headButtons">
+          <a class="navIcon" href="live-index.html" title="Live" aria-label="Live">🏐</a>
+          <a class="navIcon" href="dagens_kamper.html" title="Dagens kamper" aria-label="Dagens kamper">📅</a>
+          <a class="navIcon" href="lag.html" title="Lag" aria-label="Lag">⭐</a>
+          <a class="navIcon" href="spiller_liste.html" title="Spillere" aria-label="Spillere">👤</a>
+          <button id="themeToggle" class="themeToggle" type="button" aria-label="Bytt tema" title="Bytt dag/natt">🌙</button>
+        </div>
+        <div id="lastUpdated" class="lastUpdated"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div id="count" class="count">Laster ligaer …</div>
+      <input id="search" class="search" type="search" placeholder="Søk liga eller land" />
+    </div>
+
+    <div class="layout">
+      <div id="leagueGrid" class="leagueGrid"></div>
+
+      <div class="panel">
+        <div id="panelHeader" class="panelHeader" style="display:none;"></div>
+        <div id="panelBody" class="panelBody">
+          <div class="placeholder">Velg en liga for å vise tabellen.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const TEAMS_API_URL = "https://volleyball.ronesse.no/teams?limit=1000&offset=0";
+    const TOURNAMENT_IMG_BASE = "https://volleyball.ronesse.no/img/Tournament";
+    const SOFA_TEAM_IMG_BASE = "https://api.sofascore.app/api/v1/team";
+    const SOFA_STANDINGS_BASE = "https://api.sofascore.com/api/v1/unique-tournament";
+    const THEME_KEY = "volley_theme_v1";
+
+    let allLeagues = [];
+    let activeLeagueKey = "";
+    const standingsCache = new Map();
+
+    function loadTheme(){
+      try { return localStorage.getItem(THEME_KEY) || ""; }
+      catch { return ""; }
+    }
+
+    function saveTheme(theme){
+      try { localStorage.setItem(THEME_KEY, theme); } catch {}
+    }
+
+    function applyTheme(theme){
+      const dark = theme === "dark";
+      document.body.classList.toggle("dark", dark);
+      document.getElementById("themeToggle").textContent = dark ? "☀️" : "🌙";
+    }
+
+    function initTheme(){
+      const saved = loadTheme();
+      if (saved === "dark" || saved === "light"){
+        applyTheme(saved);
+        return;
+      }
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(prefersDark ? "dark" : "light");
+    }
+
+    function toggleTheme(){
+      const next = document.body.classList.contains("dark") ? "light" : "dark";
+      applyTheme(next);
+      saveTheme(next);
+    }
+
+    function setLastUpdated(text){
+      document.getElementById("lastUpdated").textContent = text;
+    }
+
+    async function getJson(url){
+      const res = await fetch(url, {
+        headers: { accept: "application/json" },
+        cache: "no-store"
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    }
+
+    function normalizeText(s){
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function createImageBox(className, src, fallback){
+      const wrap = document.createElement("div");
+      wrap.className = className;
+
+      if (!src){
+        wrap.innerHTML = `<div class="logoFallback">${fallback}</div>`;
+        return wrap;
+      }
+
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.src = src;
+      img.onerror = () => {
+        wrap.innerHTML = `<div class="logoFallback">${fallback}</div>`;
+      };
+
+      wrap.appendChild(img);
+      return wrap;
+    }
+
+    function leagueLogo(tournamentId, name){
+      return createImageBox(
+        "leagueLogo",
+        tournamentId ? `${TOURNAMENT_IMG_BASE}/${encodeURIComponent(String(tournamentId))}.png` : "",
+        String(name || "?").slice(0, 2).toUpperCase()
+      );
+    }
+
+    function teamLogo(sofaTeamId, name){
+      return createImageBox(
+        "teamLogo",
+        sofaTeamId ? `${SOFA_TEAM_IMG_BASE}/${encodeURIComponent(String(sofaTeamId))}/image` : "",
+        String(name || "?").slice(0, 2).toUpperCase()
+      );
+    }
+
+    function buildLeagues(teams){
+      const byKey = new Map();
+
+      for (const team of teams){
+        const tournamentId = String(team.tournament_id ?? "").trim();
+        const seasonId = String(team.season_id ?? "").trim();
+        const league = String(team.league || team.widget_name || "").trim();
+        if (!tournamentId || !seasonId || !league) continue;
+
+        const key = `${tournamentId}:${seasonId}`;
+        if (!byKey.has(key)){
+          byKey.set(key, {
+            key,
+            tournament_id: tournamentId,
+            season_id: seasonId,
+            league: league,
+            country: String(team.country || "").trim(),
+            group_type: String(team.group_type || "").trim(),
+            teams_count: 0
+          });
+        }
+        byKey.get(key).teams_count += 1;
+      }
+
+      return Array.from(byKey.values()).sort((a, b) => {
+        const c1 = normalizeText(a.country);
+        const c2 = normalizeText(b.country);
+        if (c1 !== c2) return c1.localeCompare(c2, "no");
+        return normalizeText(a.league).localeCompare(normalizeText(b.league), "no");
+      });
+    }
+
+    function renderLeagueList(){
+      const grid = document.getElementById("leagueGrid");
+      const count = document.getElementById("count");
+      const q = normalizeText(document.getElementById("search").value);
+
+      const filtered = allLeagues.filter(item => {
+        if (!q) return true;
+        return normalizeText(`${item.league} ${item.country} ${item.group_type}`).includes(q);
+      });
+
+      grid.innerHTML = "";
+      count.textContent = `${filtered.length} ligaer`;
+
+      if (!filtered.length){
+        grid.innerHTML = `<div class="placeholder">Ingen ligaer funnet.</div>`;
+        return;
+      }
+
+      for (const item of filtered){
+        const card = document.createElement("div");
+        card.className = "leagueCard" + (item.key === activeLeagueKey ? " active" : "");
+
+        const badgeText = item.teams_count ? `${item.teams_count} lag` : "Liga";
+        card.appendChild(leagueLogo(item.tournament_id, item.league));
+
+        const text = document.createElement("div");
+        text.className = "leagueText";
+        text.innerHTML = `
+          <div class="leagueName">${item.league}</div>
+          <div class="leagueMeta">${item.country || "Ukjent land"} · Sesong ${item.season_id}</div>
+        `;
+        card.appendChild(text);
+
+        const badge = document.createElement("div");
+        badge.className = "leagueBadge";
+        badge.textContent = badgeText;
+        card.appendChild(badge);
+
+        card.addEventListener("click", () => openLeague(item));
+        grid.appendChild(card);
+      }
+    }
+
+    function renderPanelHeader(item){
+      const header = document.getElementById("panelHeader");
+      header.style.display = "grid";
+      header.innerHTML = "";
+      header.appendChild(leagueLogo(item.tournament_id, item.league));
+
+      const text = document.createElement("div");
+      text.innerHTML = `
+        <div class="panelTitle">${item.league}</div>
+        <div class="panelMeta">${item.country || "Ukjent land"} · Tournament ${item.tournament_id} · Season ${item.season_id}</div>
+      `;
+      header.appendChild(text);
+    }
+
+    function renderLoadingPanel(item){
+      renderPanelHeader(item);
+      document.getElementById("panelBody").innerHTML = `
+        <div class="placeholder">
+          <div class="loadingSpinner"></div>
+          Henter tabell …
+        </div>
+      `;
+    }
+
+    function getStandingsUrl(item){
+      return `${SOFA_STANDINGS_BASE}/${encodeURIComponent(item.tournament_id)}/season/${encodeURIComponent(item.season_id)}/standings/total`;
+    }
+
+    function pickStandingsRows(data){
+      if (!data) return [];
+      if (Array.isArray(data.standings)){
+        const first = data.standings.find(x => Array.isArray(x?.rows) && x.rows.length);
+        if (first) return first.rows;
+      }
+      if (Array.isArray(data.rows)) return data.rows;
+      return [];
+    }
+
+    function renderStandingsTable(item, rows){
+      renderPanelHeader(item);
+
+      if (!rows.length){
+        document.getElementById("panelBody").innerHTML = `
+          <div class="placeholder">Ingen tabell tilgjengelig for denne ligaen.</div>
+        `;
+        return;
+      }
+
+      const html = `
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="pos">#</th>
+                <th>Lag</th>
+                <th class="num">K</th>
+                <th class="num">V</th>
+                <th class="num">T</th>
+                <th class="num">P</th>
+                <th class="num">SF</th>
+                <th class="num">SA</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(row => {
+                const team = row.team || {};
+                return `
+                  <tr>
+                    <td class="pos">${row.position ?? ""}</td>
+                    <td>
+                      <div class="teamCell" data-team-id="${team.id ?? ""}" data-team-name="${(team.name || "").replace(/"/g, "&quot;")}">
+                        <div class="teamLogo" data-logo-slot="${team.id ?? ""}"></div>
+                        <div>
+                          <div class="teamName">${team.name || "Ukjent lag"}</div>
+                          <div class="smallMuted">${team.shortName || ""}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="num">${row.played ?? ""}</td>
+                    <td class="num">${row.wins ?? ""}</td>
+                    <td class="num">${row.losses ?? ""}</td>
+                    <td class="num">${row.points ?? ""}</td>
+                    <td class="num">${row.scoresFor ?? row.setsWon ?? ""}</td>
+                    <td class="num">${row.scoresAgainst ?? row.setsLost ?? ""}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      const panelBody = document.getElementById("panelBody");
+      panelBody.innerHTML = html;
+
+      for (const row of rows){
+        const team = row.team || {};
+        const slot = panelBody.querySelector(`[data-logo-slot="${CSS.escape(String(team.id ?? ""))}"]`);
+        if (slot){
+          slot.replaceWith(teamLogo(team.id, team.name));
+        }
+      }
+    }
+
+    function renderErrorPanel(item, message){
+      renderPanelHeader(item);
+      document.getElementById("panelBody").innerHTML = `
+        <div class="errorBox">${message}</div>
+      `;
+    }
+
+    async function openLeague(item){
+      activeLeagueKey = item.key;
+      renderLeagueList();
+      renderLoadingPanel(item);
+
+      if (standingsCache.has(item.key)){
+        renderStandingsTable(item, standingsCache.get(item.key));
+        return;
+      }
+
+      try{
+        const data = await getJson(getStandingsUrl(item));
+        const rows = pickStandingsRows(data);
+        standingsCache.set(item.key, rows);
+        renderStandingsTable(item, rows);
+      } catch (err){
+        renderErrorPanel(item, `Kunne ikke hente tabell (${err.message}).`);
+      }
+    }
+
+    async function refresh(){
+      try{
+        const teams = await getJson(TEAMS_API_URL);
+        allLeagues = buildLeagues(Array.isArray(teams) ? teams : []);
+        renderLeagueList();
+
+        setLastUpdated(
+          `Oppdatert ${new Date().toLocaleTimeString("no-NO", {
+            hour:"2-digit",
+            minute:"2-digit",
+            second:"2-digit"
+          })}`
+        );
+
+        if (allLeagues.length){
+          openLeague(allLeagues[0]);
+        }
+      } catch (err){
+        document.getElementById("leagueGrid").innerHTML =
+          `<div class="errorBox">Kunne ikke hente ligaer (${err.message}).</div>`;
+        document.getElementById("panelBody").innerHTML =
+          `<div class="errorBox">Kunne ikke hente ligaer (${err.message}).</div>`;
+        document.getElementById("count").textContent = "Feil";
+      }
+    }
+
+    document.getElementById("themeToggle").addEventListener("click", toggleTheme);
+    document.getElementById("search").addEventListener("input", renderLeagueList);
+
+    initTheme();
+    refresh();
+  </script>
+</body>
+</html>
