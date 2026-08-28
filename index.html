@@ -222,4 +222,181 @@ function renderTabs() {
     const b = document.createElement("button");
     b.className = "team-btn" + (currentView === "team" && name === currentTeam ? " active" : "");
     b.textContent = name.replace("Øst ","");
-    b.on
+    b.onclick = () => {
+      currentTeam = name;
+      currentView = "team";
+      render();
+    };
+    tabs.appendChild(b);
+  });
+}
+
+
+function matchDateTime(m) {
+  const [dd,mm,yyyy] = m.date.split(".").map(Number);
+  const [hh,min] = m.time.split(":").map(Number);
+  return new Date(yyyy, mm-1, dd, hh, min, 0, 0);
+}
+
+function getAllMatches() {
+  const out = [];
+  Object.entries(DATA).forEach(([teamName, teamData]) => {
+    teamData.matches.forEach(m => out.push({...m, teamName}));
+  });
+  out.sort((a,b) => {
+    const dt = matchDateTime(a) - matchDateTime(b);
+    if (dt !== 0) return dt;
+    return a.court.localeCompare(b.court, "nb", {numeric:true});
+  });
+  return out;
+}
+
+function renderAllMatches() {
+  const arr = getAllMatches();
+  const now = new Date();
+  let nearestTime = null;
+  let nearestDiff = Infinity;
+  arr.forEach((m) => {
+    const dt = matchDateTime(m);
+    const diff = Math.abs(dt - now);
+    if (diff < nearestDiff) {
+      nearestDiff = diff;
+      nearestTime = dt.getTime();
+    }
+  });
+
+  allMatchesEl.innerHTML = arr.map((m,i) => {
+    const isNext = matchDateTime(m).getTime() === nearestTime;
+    const hasPairs = Array.isArray(m.selectedPairs) && m.selectedPairs.length;
+    const pairHtml = hasPairs ? `
+      <div class="all-match-extra">
+        <div class="small" style="font-weight:800;margin-bottom:5px">Lagoppstilling</div>
+        ${m.selectedPairs.map((p,idx)=>`
+          <div class="all-match-pair">
+            <span class="pairno">${idx+1}.</span>
+            <span>${p[0]} / ${p[1]}</span>
+            <span class="pairscore">${fmt(p[2])}</span>
+          </div>`).join("")}
+      </div>` : "";
+    return `
+      <div class="all-match ${isNext ? "nearest" : ""}" data-match-index="${i}" ${hasPairs ? 'onclick="toggleAllMatch(this)"' : ""}>
+        ${isNext ? '<div class="nearest-label">Neste kamp</div>' : ""}
+        <div class="all-match-top">
+          <div class="all-match-time">${m.time}</div>
+          <div>
+            <div class="all-match-team">${m.teamName}</div>
+            <div class="all-match-vs">mot ${m.opponent} · kamp #${m.matchno}</div>
+          </div>
+          <div class="all-match-court">${m.court}<div class="all-match-place">${m.place}</div></div>
+        </div>
+        ${hasPairs ? '<div class="expand-hint">Trykk for lagoppstilling</div>' : ""}
+        ${pairHtml}
+      </div>`;
+  }).join("");
+}
+
+function toggleAllMatch(el) {
+  el.classList.toggle("open");
+  const hint = el.querySelector(".expand-hint");
+  if (hint) hint.textContent = el.classList.contains("open") ? "Trykk for å skjule lagoppstilling" : "Trykk for lagoppstilling";
+}
+
+function focusNearestMatch() {
+  if (currentView !== "overview") return;
+  const nearest = document.querySelector(".all-match.nearest");
+  if (nearest) nearest.scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+function renderPlayers() {
+  playersEl.innerHTML = DATA[currentTeam].players.map(p => `
+    <div class="player">
+      <strong>${p.name}</strong>
+      <div class="rank">
+        <div class="rank-main">${fmt(p.rank1)}</div>
+        <div class="rank-sub">ranking 2: ${fmt(p.rank2)}</div>
+      </div>
+    </div>`).join("");
+}
+
+function renderMatches() {
+  matchesEl.innerHTML = DATA[currentTeam].matches.map(m => `
+    <div class="match">
+      <div class="match-top">
+        <div>
+          <div class="match-time">${m.time}</div>
+          <div class="match-opp">${m.homeaway === "Hjemme" ? "Øst" : m.opponent} – ${m.homeaway === "Hjemme" ? m.opponent : "Øst"}</div>
+        </div>
+        <div><strong>#${m.matchno}</strong></div>
+      </div>
+      <div class="meta">
+        <span>${m.date}</span><span>${m.court}</span><span>${m.place}</span>
+      </div>
+      ${m.selectedPairs ? `<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--border)">
+        <div class="small" style="font-weight:800;margin-bottom:6px">Lag til kampen</div>
+        ${m.selectedPairs.map((p,i)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0">
+          <span><strong>Lag ${i+1}:</strong> ${p[0]} / ${p[1]}</span>
+          <strong>${fmt(p[2])}</strong>
+        </div>`).join("")}
+      </div>` : ""}
+    </div>`).join("");
+}
+
+function renderCombos() {
+  let arr = [...DATA[currentTeam].combos];
+  if (comboSort === "high") arr.sort((a,b)=>b.total-a.total);
+  else arr.sort((a,b)=>(a.p1+a.p2).localeCompare(b.p1+b.p2,"nb"));
+  const vals = arr.map(x=>x.total);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  combosEl.innerHTML = arr.map(c => {
+    const t = (c.total-min)/(max-min || 1);
+    const cls = t < .34 ? "good" : t < .67 ? "mid" : "high";
+    return `<div class="combo ${cls}">
+      <div><strong>${c.p1}</strong><br><span class="small">+ ${c.p2}</span></div>
+      <div class="combo-score">${fmt(c.total)}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderProgram() {
+  let lastDay = "";
+  let out = "";
+  DATA[currentTeam].program.forEach(r => {
+    if (r.day) {
+      lastDay = r.day;
+      out += `<div class="program-day">${r.day}</div>`;
+    }
+    out += `<div class="program-row"><div class="program-time">${r.time}</div><div>${r.activity}</div></div>`;
+  });
+  programEl.innerHTML = out;
+}
+
+document.getElementById("sortHigh").onclick = () => {
+  comboSort="high";
+  document.getElementById("sortHigh").classList.add("active");
+  document.getElementById("sortName").classList.remove("active");
+  renderCombos();
+};
+document.getElementById("sortName").onclick = () => {
+  comboSort="name";
+  document.getElementById("sortName").classList.add("active");
+  document.getElementById("sortHigh").classList.remove("active");
+  renderCombos();
+};
+
+function render() {
+  renderTabs();
+  if (currentView === "overview") {
+    overviewSection.classList.add("active");
+    teamContent.classList.add("hidden-view");
+    renderAllMatches();
+  } else {
+    overviewSection.classList.remove("active");
+    teamContent.classList.remove("hidden-view");
+    renderPlayers(); renderMatches(); renderCombos(); renderProgram();
+  }
+}
+render();
+setTimeout(focusNearestMatch, 150);
+</script>
+</body>
+</html>
